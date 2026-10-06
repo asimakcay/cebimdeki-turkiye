@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#C41E3A">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="description" content="81 ilde yakındaki yerler, tarih, efsane ve meşhur lezzetler — il / ilçe.">
+<title>Cebimdeki Türkiye</title>
+<link rel="manifest" href="./manifest.json">
+<link rel="apple-touch-icon" href="./icons/icon-192.png">
+<script src="./data.js"></script>
+<style>
+:root{
+  --bg:#0B1220; --bg2:#121A2B; --card:#162033; --card2:#1C2940;
+  --line:rgba(255,255,255,.08); --text:#F4F7FB; --muted:#9AA8BC; --dim:#6B7A90;
+  --red:#C41E3A; --red2:#E11D48; --teal:#2EC4B6; --amber:#F4A261;
+  --r:20px; --shadow:0 12px 32px rgba(0,0,0,.35);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{font-size:16px}
+body{
+  margin:0; background:var(--bg); color:var(--text);
+  font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  line-height:1.45; min-height:100dvh;
+  padding-bottom:calc(84px + env(safe-area-inset-bottom));
+}
+body::before{
+  content:""; position:fixed; inset:0; pointer-events:none; z-index:0;
+  background:
+    radial-gradient(ellipse at 10% 0%, rgba(196,30,58,.28), transparent 50%),
+    radial-gradient(ellipse at 90% 10%, rgba(46,196,182,.18), transparent 45%),
+    radial-gradient(ellipse at 50% 100%, rgba(46,196,182,.08), transparent 40%);
+}
+h1,h2,h3{margin:0;font-weight:800;letter-spacing:-.02em;line-height:1.2}
+h1{font-size:1.45rem} h2{font-size:1.15rem} h3{font-size:1.02rem}
+p{margin:0} button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+button:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
+.wrap{position:relative;z-index:1;max-width:560px;margin:0 auto;padding:18px 16px 8px}
+.screen{display:none}.screen.on{display:block}
+.top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:14px}
+.brand{display:flex;flex-direction:column;gap:2px}
+.brand .sub{font-size:.78rem;color:var(--muted);font-weight:600}
+.chip{
+  display:inline-flex;align-items:center;gap:6px;font-size:.75rem;font-weight:700;
+  padding:6px 10px;border-radius:999px;background:var(--card);border:1px solid var(--line);color:var(--muted);
+}
+.chip.ok{color:var(--teal);border-color:rgba(46,196,182,.35);background:rgba(46,196,182,.1)}
+.chip.warn{color:var(--amber);border-color:rgba(244,162,97,.35)}
+.card{
+  background:linear-gradient(180deg,var(--card),var(--card2));
+  border:1px solid var(--line); border-radius:var(--r); padding:14px 14px;
+  margin-bottom:10px; box-shadow:var(--shadow);
+}
+.card.tap{cursor:pointer; transition:transform .08s, border-color .15s}
+.card.tap:active{transform:scale(.985)}
+.card.tap:hover{border-color:rgba(46,196,182,.35)}
+.row{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.tag{font-size:.72rem;font-weight:700;color:var(--teal);text-transform:uppercase;letter-spacing:.04em}
+.muted{color:var(--muted);font-size:.88rem}
+.dim{color:var(--dim);font-size:.8rem}
+.dist{font-weight:800;color:var(--text);white-space:nowrap}
+.dist small{display:block;font-weight:600;color:var(--muted);font-size:.72rem}
+.food-pill{
+  display:inline-block;margin-top:8px;padding:5px 10px;border-radius:999px;
+  background:rgba(196,30,58,.15);color:#ffb3c0;font-size:.78rem;font-weight:700;
+}
+.btn{
+  display:flex;align-items:center;justify-content:center;gap:8px;width:100%;
+  min-height:48px;padding:0 16px;border-radius:999px;font-weight:800;
+  background:var(--red);color:#fff;margin-top:10px;
+}
+.btn.sec{background:transparent;border:1px solid var(--line);color:var(--text)}
+.btn.teal{background:var(--teal);color:#06201d}
+.btn.sm{min-height:40px;font-size:.9rem;width:auto;display:inline-flex;padding:0 14px}
+.btn:active{filter:brightness(.95)}
+.map-actions{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+.map-actions .btn{margin-top:0;text-decoration:none}
+.ilce-pill{
+  display:inline-block;margin-top:6px;padding:4px 10px;border-radius:999px;
+  background:rgba(46,196,182,.14);color:var(--teal);font-size:.78rem;font-weight:800;
+}
+.nav{
+  position:fixed;left:0;right:0;bottom:0;z-index:20;
+  background:rgba(11,18,32,.92);backdrop-filter:blur(16px);
+  border-top:1px solid var(--line);
+  padding:8px 10px calc(8px + env(safe-area-inset-bottom));
+  display:flex;justify-content:center;gap:8px;
+}
+.nav .n{
+  flex:1;max-width:140px;display:flex;flex-direction:column;align-items:center;gap:2px;
+  padding:8px 6px;border-radius:14px;color:var(--dim);font-size:.72rem;font-weight:700;
+}
+.nav .n.on{color:var(--text);background:rgba(196,30,58,.18)}
+.nav .n span{font-size:1.15rem}
+.search{
+  width:100%;padding:12px 14px;border-radius:14px;border:1px solid var(--line);
+  background:var(--bg2);color:var(--text);margin-bottom:12px;font:inherit;
+}
+.layer{margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}
+.layer .lab{font-size:.72rem;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--teal);margin-bottom:6px}
+.layer.legend .lab{color:var(--amber)}
+.layer.food .lab{color:var(--red2)}
+.venue{
+  display:flex;justify-content:space-between;gap:10px;padding:10px 0;
+  border-bottom:1px solid var(--line);
+}
+.venue:last-child{border-bottom:0}
+.stars{color:var(--amber);font-weight:800;white-space:nowrap}
+.back{font-weight:800;color:var(--teal);margin-bottom:10px;padding:4px 0}
+.seg{display:flex;gap:6px;overflow-x:auto;padding-bottom:8px;margin-bottom:6px}
+.seg button{
+  flex:0 0 auto;padding:8px 12px;border-radius:999px;background:var(--card);
+  border:1px solid var(--line);font-size:.8rem;font-weight:700;color:var(--muted);
+}
+.seg button.on{background:rgba(46,196,182,.15);color:var(--teal);border-color:rgba(46,196,182,.4)}
+.toggle{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid var(--line)}
+.toggle:last-child{border-bottom:0}
+.sw{
+  width:48px;height:28px;border-radius:999px;background:#2a3548;position:relative;transition:.15s;
+}
+.sw.on{background:var(--teal)}
+.sw i{position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;transition:.15s}
+.sw.on i{left:23px}
+.city-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.city-tile{
+  background:var(--card);border:1px solid var(--line);border-radius:16px;padding:12px;
+  text-align:left;font-weight:800;
+}
+.city-tile small{display:block;font-weight:600;color:var(--muted);margin-top:4px}
+.toast{
+  position:fixed;left:50%;bottom:100px;transform:translateX(-50%) translateY(20px);
+  background:#fff;color:#111;padding:10px 16px;border-radius:999px;font-weight:700;font-size:.88rem;
+  opacity:0;pointer-events:none;transition:.2s;z-index:40;white-space:nowrap;
+}
+.toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+.footer-note{font-size:.72rem;color:var(--dim);line-height:1.4;margin-top:16px;padding:12px;border-radius:14px;background:rgba(255,255,255,.03);border:1px solid var(--line)}
+.empty{text-align:center;padding:28px 12px;color:var(--muted)}
+
+.place-photo{
+  margin:12px 0 4px; border-radius:14px; overflow:hidden;
+  border:1px solid var(--line); background:#0a101c;
+  aspect-ratio:16/9; max-height:220px;
+}
+.place-photo img{
+  display:block; width:100%; height:100%; object-fit:cover;
+}
+.photo-attr{
+  font-size:.7rem; color:var(--dim); line-height:1.35; margin:6px 0 2px;
+}
+.photo-attr a{color:var(--teal); text-decoration:none; font-weight:600}
+.card-thumb{
+  flex:0 0 56px; width:56px; height:56px; border-radius:12px; overflow:hidden;
+  border:1px solid var(--line); background:#0a101c; margin-right:2px;
+}
+.card-thumb img{display:block;width:100%;height:100%;object-fit:cover}
+.row.with-thumb{align-items:center}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <!-- KEŞFET -->
+  <section id="sc-explore" class="screen on">
+    <div class="top">
+      <div class="brand">
+        <h1>Cebimdeki Türkiye</h1>
+        <div class="sub">81 il · tarih · küratörlü lezzet</div>
+      </div>
+      <div id="gpsChip" class="chip">GPS…</div>
+    </div>
+    <input class="search" id="qExplore" placeholder="Yer, il veya ilçe ara…" autocomplete="off">
+    <div class="seg" id="regionSeg"></div>
+    <div id="nearCity" class="muted" style="margin-bottom:10px"></div>
+    <div id="exploreList"></div>
+    <p class="footer-note" id="attrNote"></p>
+  </section>
+
+  <!-- İLLER -->
+  <section id="sc-cities" class="screen">
+    <div class="top">
+      <div class="brand"><h1>İller</h1><div class="sub">81 il · Kültür Portalı kataloğu</div></div>
+      <div class="chip" id="cityCountChip"></div>
+    </div>
+    <input class="search" id="qCities" placeholder="İl veya plaka ara…" autocomplete="off">
+    <div id="cityList" class="city-grid"></div>
+  </section>
+
+  <!-- İL DETAY -->
+  <section id="sc-city" class="screen">
+    <button class="back" id="backFromCity">← İller</button>
+    <div class="top">
+      <div class="brand"><h1 id="cityTitle"></h1><div class="sub" id="citySub"></div></div>
+      <button class="btn sm teal" id="teleportCity">İl merkezine ışınlan</button>
+    </div>
+    <div class="seg" id="districtSeg"></div>
+    <div id="cityPlaces"></div>
+  </section>
+
+  <!-- İLÇE DETAY (opsiyonel ışınlanma) -->
+  <section id="sc-district" class="screen">
+    <button class="back" id="backFromDistrict">← İl</button>
+    <div class="top">
+      <div class="brand"><h1 id="districtTitle"></h1><div class="sub" id="districtSub"></div></div>
+      <button class="btn sm teal" id="teleportDistrict">İlçeye ışınlan</button>
+    </div>
+    <div id="districtPlaces"></div>
+  </section>
+
+  <!-- YER DETAY -->
+  <section id="sc-place" class="screen">
+    <button class="back" id="backFromPlace">← Geri</button>
+    <div class="card" id="placeHead"></div>
+    <div id="placeLayers"></div>
+  </section>
+
+  <!-- BEN -->
+  <section id="sc-me" class="screen">
+    <div class="top">
+      <div class="brand"><h1>Ben</h1><div class="sub">Konum & ayarlar</div></div>
+    </div>
+    <div class="card">
+      <div class="toggle">
+        <div>
+          <strong>Konum simülasyonu</strong>
+          <div class="dim">Gerçek GPS yerine demo konum kullan</div>
+        </div>
+        <button class="sw" id="simSw" aria-label="Simülasyon"><i></i></button>
+      </div>
+      <div class="toggle">
+        <div>
+          <strong>Büyük yazı</strong>
+          <div class="dim">Okunabilirliği artır</div>
+        </div>
+        <button class="sw" id="bigSw" aria-label="Büyük yazı"><i></i></button>
+      </div>
+    </div>
+    <div class="card">
+      <h3 style="margin-bottom:8px">İl merkezine ışınlan</h3>
+      <p class="dim" style="margin-bottom:10px">Demo için bir il seç — yerinde olmadan dene. İlçe ışınlanması il kartından.</p>
+      <input class="search" id="qTeleport" placeholder="İl ara…" autocomplete="off" style="margin-bottom:10px">
+      <div id="teleportList" class="city-grid"></div>
+    </div>
+    <div class="card">
+      <h3>GPS durumu</h3>
+      <p class="muted" id="gpsDetail" style="margin-top:8px">—</p>
+      <p class="dim" style="margin-top:8px">Konum yalnızca cihazında mesafe hesaplamak için kullanılır; sunucuya gönderilmez.</p>
+    </div>
+    <div class="card">
+      <h3>Geliştirici</h3>
+      <p class="muted" style="margin-top:8px">Asım Akçay · Özel Atayurt Okulları, Eskişehir</p>
+      <p class="dim" style="margin-top:6px">Cebimdeki Türkiye — ticari ürün yönü (Play / App Store). Kardeş uygulama: Cebimdeki Eskişehir.</p>
+    </div>
+    <p class="footer-note" id="attrNote2"></p>
+  </section>
+</div>
+
+<nav class="nav" aria-label="Ana menü">
+  <button class="n on" data-tab="explore"><span>🧭</span>Keşfet</button>
+  <button class="n" data-tab="cities"><span>🏙️</span>İller</button>
+  <button class="n" data-tab="me"><span>👤</span>Ben</button>
+</nav>
+<div class="toast" id="toast"></div>
+
+<script>
+(() => {
+  const RAW = window.CT_DATA;
+  // Prefer provinces schema; fall back to cities
+  const PROVINCES = RAW.provinces || (RAW.cities || []).map(c => ({
+    id:c.id, plate:c.plate||'', name:c.name, lat:c.lat, lng:c.lng, region:c.region,
+    districts:[{id:c.id+'-merkez', name:'Merkez', lat:c.lat, lng:c.lng, important:true, places:c.places||[]}]
+  }));
+  const DATA = { ...RAW, provinces: PROVINCES };
+  const KEY = 'ct.v1';
+  const WALK_MPM = 80;
+
+  const $ = (id) => document.getElementById(id);
+  const regions = [...new Set(PROVINCES.map(c => c.region))];
+
+  function load(){
+    try{
+      return Object.assign({
+        sim:false, big:false, name:'', lastTab:'explore',
+        simLat:null, simLng:null, region:'all', backPlace:'explore', districtFilter:'all'
+      }, JSON.parse(localStorage.getItem(KEY)||'{}'));
+    }catch(e){
+      return {sim:false,big:false,name:'',lastTab:'explore',simLat:null,simLng:null,region:'all',backPlace:'explore',districtFilter:'all'};
+    }
+  }
+  function save(){ try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} }
+  let S = load();
+  let pos = null;
+  let watchId = null;
+  let currentCity = null;      // province
+  let currentDistrict = null;
+  let currentPlace = null;
+  let placeBack = 'explore';
+
+  function haversine(a,b){
+    const R=6371000, toR=x=>x*Math.PI/180;
+    const dLat=toR(b.lat-a.lat), dLng=toR(b.lng-a.lng);
+    const h=Math.sin(dLat/2)**2 + Math.cos(toR(a.lat))*Math.cos(toR(b.lat))*Math.sin(dLng/2)**2;
+    return 2*R*Math.asin(Math.sqrt(h));
+  }
+  function distTo(lat,lng){ return pos ? Math.round(haversine(pos,{lat,lng})) : null; }
+  function fmtDist(m){
+    if(m==null) return '—';
+    if(m<1000) return m+' m';
+    return (m/1000).toFixed(m<10000?1:0)+' km';
+  }
+  function walkMin(m){ return m==null?null:Math.max(1, Math.round(m/WALK_MPM)); }
+
+  function ratingOf(v){
+    return v.ratingLabel || (v.rating ? ('Haritalar’da / Foursquare’de '+String(v.rating)+' — küratörlü') : 'Haritalar’da / Foursquare’de 4+ — küratörlü');
+  }
+
+  function allPlaces(){
+    const out=[];
+    for(const p of PROVINCES){
+      for(const d of (p.districts||[])){
+        for(const pl of (d.places||[])){
+          out.push({
+            ...pl,
+            cityId:p.id, cityName:p.name, region:p.region, plate:p.plate,
+            districtId:d.id, districtName:d.name
+          });
+        }
+      }
+    }
+    return out;
+  }
+
+  function placeCount(p){
+    return (p.districts||[]).reduce((n,d)=>n+(d.places||[]).length,0);
+  }
+
+  function nearestCity(){
+    if(!pos) return PROVINCES[0];
+    return PROVINCES.map(c=>({c,d:haversine(pos,c)})).sort((a,b)=>a.d-b.d)[0].c;
+  }
+
+  function setPos(lat,lng,acc,sim){
+    pos={lat,lng,acc:acc??null,sim:!!sim};
+    renderGps();
+    const on=document.querySelector('.screen.on')?.id;
+    if(on==='sc-explore') renderExplore();
+    if(on==='sc-city' && currentCity) renderCity(currentCity);
+    if(on==='sc-district' && currentDistrict) renderDistrict(currentDistrict);
+    if(on==='sc-place' && currentPlace) renderPlace(currentPlace);
+  }
+
+  function startGPS(){
+    if(S.sim && S.simLat!=null){
+      setPos(S.simLat,S.simLng,null,true);
+      return;
+    }
+    if(!navigator.geolocation){ renderGps(); return; }
+    if(watchId!=null) navigator.geolocation.clearWatch(watchId);
+    watchId = navigator.geolocation.watchPosition(
+      (p)=> { if(!S.sim) setPos(p.coords.latitude,p.coords.longitude,p.coords.accuracy,false); },
+      ()=> renderGps(),
+      {enableHighAccuracy:true, maximumAge:10000, timeout:15000}
+    );
+  }
+
+  function teleportTo(lat,lng,label){
+    S.sim=true; S.simLat=lat; S.simLng=lng; save();
+    $('simSw').classList.add('on');
+    setPos(lat,lng,null,true);
+    toast(label ? (label+' konumuna ışınlandı') : 'Işınlandı');
+  }
+
+  function renderGps(){
+    const chip=$('gpsChip');
+    const det=$('gpsDetail');
+    if(S.sim && pos){
+      chip.className='chip ok';
+      chip.textContent='Demo konum';
+      if(det) det.textContent=`Simülasyon: ${pos.lat.toFixed(4)}, ${pos.lng.toFixed(4)} · en yakın il: ${nearestCity().name}`;
+    } else if(pos){
+      chip.className='chip ok';
+      chip.textContent=pos.acc!=null?`GPS ±${Math.round(pos.acc)} m`:'GPS açık';
+      if(det) det.textContent=`Canlı GPS: ${pos.lat.toFixed(4)}, ${pos.lng.toFixed(4)} (cihazda kalır)`;
+    } else {
+      chip.className='chip warn';
+      chip.textContent='Konum yok';
+      if(det) det.textContent='Konum alınamadı. Ben sekmesinden simülasyon veya bir ile ışınlan.';
+    }
+  }
+
+  function toast(msg){
+    const t=$('toast'); t.textContent=msg; t.classList.add('on');
+    clearTimeout(toast._t); toast._t=setTimeout(()=>t.classList.remove('on'),2200);
+  }
+
+  function show(id){
+    document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));
+    $('sc-'+id).classList.add('on');
+    document.querySelectorAll('.nav .n').forEach(b=>{
+      b.classList.toggle('on', b.dataset.tab===id || (id==='city'&&b.dataset.tab==='cities') || (id==='district'&&b.dataset.tab==='cities') || (id==='place'&&(b.dataset.tab==='explore'||b.dataset.tab==='cities')));
+    });
+    if(id==='explore'||id==='cities'||id==='me'){ S.lastTab=id; save(); }
+    if(id==='explore') renderExplore();
+    if(id==='cities') renderCities();
+    if(id==='me') renderMe();
+  }
+
+  document.querySelectorAll('.nav .n').forEach(b=>b.onclick=()=>show(b.dataset.tab));
+
+  function renderRegionSeg(){
+    const el=$('regionSeg');
+    const items=['all',...regions];
+    el.innerHTML = items.map(r=>{
+      const label=r==='all'?'Tümü':r;
+      return `<button data-r="${r}" class="${S.region===r?'on':''}">${label}</button>`;
+    }).join('');
+    el.querySelectorAll('button').forEach(b=>b.onclick=()=>{ S.region=b.dataset.r; save(); exploreShown=120; renderExplore(); renderRegionSeg(); });
+  }
+
+  function renderExplore(){
+    renderRegionSeg();
+    const q=($('qExplore').value||'').trim().toLowerCase();
+    const nc=nearestCity();
+    $('nearCity').textContent = pos
+      ? `En yakın il: ${nc.name} (${nc.plate||''}) · ${fmtDist(distTo(nc.lat,nc.lng))}`
+      : 'Konum yok — Ben sekmesinden bir ile ışınlan veya GPS aç.';
+
+    let list=allPlaces();
+    if(S.region!=='all') list=list.filter(p=>p.region===S.region);
+    if(q) list=list.filter(p=> (p.tr.name+' '+p.cityName+' '+(p.districtName||'')+' '+(p.tr.tag||'')+' '+(p.tr.food||'')+' '+(p.plate||'')).toLowerCase().includes(q));
+    list=list.map(p=>{
+      const d=distTo(p.lat,p.lng);
+      return {...p,d};
+    }).sort((a,b)=>{
+      if(a.d==null && b.d==null) return a.tr.name.localeCompare(b.tr.name,'tr');
+      if(a.d==null) return 1;
+      if(b.d==null) return -1;
+      return a.d-b.d;
+    });
+
+    const box=$('exploreList');
+    if(!list.length){ box.innerHTML='<div class="empty">Sonuç yok</div>'; return; }
+    // Keşfet previously sliced to 80 — that hid the catalog. Show all, in pages for performance.
+    const PAGE=120;
+    if(typeof exploreShown!=='number' || exploreShown<PAGE) exploreShown=PAGE;
+    if(exploreShown>list.length) exploreShown=list.length;
+    const shown=list.slice(0, exploreShown);
+    const head=`<div class="chip" style="margin-bottom:10px">Gösterilen ${shown.length} / ${list.length} yer${list.length<allPlaces().length?' (filtreli)':''}</div>`;
+    const cards=shown.map(p=>{
+      const wm=walkMin(p.d);
+      const foodShort=(p.tr.food||'').split('—')[0].trim().slice(0,64);
+      const topV=(p.venues||[])[0];
+      const thumb=p.photo&&wikiThumbUrl(p.photo.thumbUrl||p.photo.url,250);
+      return `<article class="card tap" data-pid="${p.id}" data-cid="${p.cityId}" data-did="${p.districtId}">
+        <div class="row with-thumb">
+          ${thumb?`<div class="card-thumb"><img src="${escapeHtml(thumb)}" alt="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></div>`:''}
+          <div style="flex:1;min-width:0">
+            <div class="tag">${p.cityName}${p.districtName?' · '+p.districtName:''} · ${p.tr.tag||'Yer'}</div>
+            <h3 style="margin-top:4px">${p.tr.name}</h3>
+            <div class="food-pill">🍽️ ${escapeHtml(foodShort)}${foodShort.length>=64?'…':''}</div>
+            ${topV?`<div class="dim" style="margin-top:6px">★ ${escapeHtml(ratingOf(topV))} · ${escapeHtml(topV.name)}</div>`:''}
+          </div>
+          <div class="dist">${fmtDist(p.d)}${wm!=null?`<small>~${wm} dk yürüme</small>`:''}</div>
+        </div>
+      </article>`;
+    }).join('');
+    const more = exploreShown<list.length
+      ? `<button class="btn" id="exploreMore" style="width:100%;margin:8px 0 20px">Daha fazla göster (${list.length-exploreShown} kaldı)</button>
+         <button class="btn sec" id="exploreAll" style="width:100%;margin:0 0 20px">Tümünü listele (${list.length})</button>`
+      : `<div class="muted" style="text-align:center;margin:12px 0 24px">Tüm ${list.length} yer listelendi</div>`;
+    box.innerHTML = head+cards+more;
+    box.querySelectorAll('[data-pid]').forEach(el=>{
+      el.onclick=()=>{
+        const prov=PROVINCES.find(c=>c.id===el.dataset.cid);
+        const dist=(prov.districts||[]).find(d=>d.id===el.dataset.did);
+        const place=(dist?.places||[]).find(p=>p.id===el.dataset.pid);
+        openPlace(place, prov, 'explore', dist);
+      };
+    });
+    const moreBtn=$('exploreMore');
+    if(moreBtn) moreBtn.onclick=()=>{ exploreShown=Math.min(list.length, exploreShown+PAGE); renderExplore(); };
+    const allBtn=$('exploreAll');
+    if(allBtn) allBtn.onclick=()=>{ exploreShown=list.length; renderExplore(); };
+  }
+  let exploreShown=120;
+  $('qExplore').oninput=()=>{ exploreShown=120; renderExplore(); };
+
+  function renderCities(){
+    const n=PROVINCES.length;
+    const pc=allPlaces().length;
+    $('cityCountChip').textContent = n+' il · '+pc+' yer';
+    const q=($('qCities').value||'').trim().toLowerCase();
+    let list=PROVINCES.slice().sort((a,b)=>a.name.localeCompare(b.name,'tr'));
+    if(q) list=list.filter(c=>c.name.toLowerCase().includes(q)||c.region.toLowerCase().includes(q)||String(c.plate||'').includes(q)||c.id.includes(q));
+    const box=$('cityList');
+    box.innerHTML = list.map(c=>{
+      const d=distTo(c.lat,c.lng);
+      const pc=placeCount(c);
+      const dc=(c.districts||[]).length;
+      return `<button class="city-tile" data-cid="${c.id}">
+        <span class="dim" style="font-weight:700">${c.plate||''}</span> ${c.name}
+        <small>${c.region} · ${dc} ilçe · ${pc} yer${d!=null?' · '+fmtDist(d):''}</small>
+      </button>`;
+    }).join('');
+    box.querySelectorAll('[data-cid]').forEach(b=>b.onclick=()=>openCity(PROVINCES.find(c=>c.id===b.dataset.cid)));
+  }
+  $('qCities').oninput=()=>renderCities();
+
+  function openCity(city){
+    currentCity=city; currentDistrict=null; S.districtFilter='all';
+    show('city'); renderCity(city);
+  }
+  function renderCity(city){
+    $('cityTitle').textContent=city.name;
+    const d=distTo(city.lat,city.lng);
+    const pc=placeCount(city);
+    $('citySub').textContent=`Plaka ${city.plate||'—'} · ${city.region} · ${pc} yer${d!=null?' · merkez '+fmtDist(d):''}`;
+    $('teleportCity').onclick=()=>teleportTo(city.lat,city.lng,city.name);
+
+    const seg=$('districtSeg');
+    const dists=city.districts||[];
+    seg.innerHTML = [`<button data-did="all" class="${S.districtFilter==='all'?'on':''}">Tüm ilçeler</button>`]
+      .concat(dists.map(d=>`<button data-did="${d.id}" class="${S.districtFilter===d.id?'on':''}">${d.name}${(d.places||[]).length?` (${d.places.length})`:''}</button>`))
+      .join('');
+    seg.querySelectorAll('button').forEach(b=>b.onclick=()=>{
+      S.districtFilter=b.dataset.did; save();
+      if(b.dataset.did!=='all'){
+        const dist=dists.find(x=>x.id===b.dataset.did);
+        if(dist){ openDistrict(dist, city); return; }
+      }
+      renderCity(city);
+    });
+
+    const box=$('cityPlaces');
+    let items=[];
+    for(const dist of dists){
+      if(S.districtFilter!=='all' && dist.id!==S.districtFilter) continue;
+      for(const p of (dist.places||[])){
+        items.push({...p, districtId:dist.id, districtName:dist.name, d:distTo(p.lat,p.lng)});
+      }
+    }
+    items.sort((a,b)=>(a.d??1e15)-(b.d??1e15));
+    if(!items.length){
+      box.innerHTML='<div class="empty">Bu ilçede henüz yer yok — diğer ilçelere bak.</div>';
+      return;
+    }
+    box.innerHTML = items.map(p=>{
+      const wm=walkMin(p.d);
+      const topV=(p.venues||[])[0];
+      const thumb=p.photo&&wikiThumbUrl(p.photo.thumbUrl||p.photo.url,250);
+      return `<article class="card tap" data-pid="${p.id}" data-did="${p.districtId}">
+        <div class="row with-thumb">
+          ${thumb?`<div class="card-thumb"><img src="${escapeHtml(thumb)}" alt="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></div>`:''}
+          <div style="flex:1;min-width:0">
+            <div class="tag">${p.districtName||''} · ${p.tr.tag||'Yer'}</div>
+            <h3 style="margin-top:4px">${p.tr.name}</h3>
+            <div class="food-pill">🍽️ ${(p.tr.food||'').split('—')[0].trim().slice(0,48)}</div>
+            ${topV?`<div class="dim" style="margin-top:6px">★ ${escapeHtml(ratingOf(topV))} · ${escapeHtml(topV.name)}</div>`:''}
+          </div>
+          <div class="dist">${fmtDist(p.d)}${wm!=null?`<small>~${wm} dk</small>`:''}</div>
+        </div>
+      </article>`;
+    }).join('');
+    box.querySelectorAll('[data-pid]').forEach(el=>{
+      const dist=(city.districts||[]).find(d=>d.id===el.dataset.did);
+      const place=(dist?.places||[]).find(p=>p.id===el.dataset.pid);
+      el.onclick=()=>openPlace(place, city, 'city', dist);
+    });
+  }
+  $('backFromCity').onclick=()=>show('cities');
+
+  function openDistrict(dist, city){
+    currentDistrict=dist; currentCity=city;
+    show('district'); renderDistrict(dist);
+  }
+  function renderDistrict(dist){
+    const city=currentCity;
+    $('districtTitle').textContent=dist.name;
+    const d=distTo(dist.lat,dist.lng);
+    $('districtSub').textContent=`${city?city.name:''} · ${(dist.places||[]).length} yer${d!=null?' · '+fmtDist(d):''}`;
+    $('teleportDistrict').onclick=()=>teleportTo(dist.lat,dist.lng, `${city?city.name+' / ':''}${dist.name}`);
+    const box=$('districtPlaces');
+    const items=(dist.places||[]).map(p=>({...p,d:distTo(p.lat,p.lng)})).sort((a,b)=>(a.d??1e15)-(b.d??1e15));
+    if(!items.length){ box.innerHTML='<div class="empty">Bu ilçede yer yok</div>'; return; }
+    box.innerHTML = items.map(p=>{
+      const wm=walkMin(p.d);
+      const topV=(p.venues||[])[0];
+      const thumb=p.photo&&wikiThumbUrl(p.photo.thumbUrl||p.photo.url,250);
+      return `<article class="card tap" data-pid="${p.id}">
+        <div class="row with-thumb">
+          ${thumb?`<div class="card-thumb"><img src="${escapeHtml(thumb)}" alt="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></div>`:''}
+          <div style="flex:1;min-width:0">
+            <div class="tag">${dist.name} · ${p.tr.tag||'Yer'}</div>
+            <h3 style="margin-top:4px">${p.tr.name}</h3>
+            <div class="food-pill">🍽️ ${(p.tr.food||'').split('—')[0].trim().slice(0,48)}</div>
+            ${topV?`<div class="dim" style="margin-top:6px">★ ${escapeHtml(ratingOf(topV))} · ${escapeHtml(topV.name)}</div>`:''}
+          </div>
+          <div class="dist">${fmtDist(p.d)}${wm!=null?`<small>~${wm} dk</small>`:''}</div>
+        </div>
+      </article>`;
+    }).join('');
+    box.querySelectorAll('[data-pid]').forEach(el=>{
+      el.onclick=()=>openPlace(dist.places.find(p=>p.id===el.dataset.pid), city, 'district', dist);
+    });
+  }
+  $('backFromDistrict').onclick=()=>{ if(currentCity){ show('city'); renderCity(currentCity); } else show('cities'); };
+
+  function openPlace(place, city, back, dist){
+    currentPlace=place; currentCity=city; currentDistrict=dist||null; placeBack=back||'explore';
+    show('place'); renderPlace(place);
+  }
+  function renderPlace(p){
+    const city=currentCity || PROVINCES.find(c=>c.id===p.cityId);
+    const dist=currentDistrict || (city && (city.districts||[]).find(d=>(d.places||[]).some(x=>x.id===p.id)));
+    const d=distTo(p.lat,p.lng);
+    const wm=walkMin(d);
+    const tr=p.tr;
+    const ilce = dist ? dist.name : (p.districtName || '');
+    const lat = p.lat, lng = p.lng;
+    let dirUrl = '';
+    let mapUrl = '';
+    if(lat!=null && lng!=null){
+      dirUrl = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=driving`;
+      if(pos && pos.lat!=null && pos.lng!=null){
+        dirUrl += `&origin=${pos.lat},${pos.lng}`;
+      }
+      mapUrl = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
+    }
+    const ph = p.photo;
+    const photoSrc = ph && wikiThumbUrl(ph.thumbUrl || ph.url, 960);
+    const photoBlock = photoSrc ? `
+      <div class="place-photo"><img src="${escapeHtml(photoSrc)}" alt="${escapeHtml(tr.name||'')}" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></div>
+      <div class="photo-attr">${escapeHtml(ph.attribution||'Photo: Wikimedia Commons')}${ph.license?' · '+escapeHtml(ph.license):''}${ph.commonsUrl?` · <a href="${escapeHtml(ph.commonsUrl)}" target="_blank" rel="noopener">Commons</a>`:''}</div>` : '';
+    $('placeHead').innerHTML = `
+      <div class="tag">${city?city.name:''}${ilce?' · '+ilce:''} · ${tr.tag||''}</div>
+      <h2 style="margin-top:6px">${tr.name}</h2>
+      ${ilce?`<div class="ilce-pill">İlçe: ${escapeHtml(ilce)}</div>`:''}
+      <div class="muted" style="margin-top:8px">${fmtDist(d)}${wm!=null?` · ~${wm} dk yürüme`:''}</div>
+      ${photoBlock}
+      ${dirUrl?`<div class="map-actions">
+        <a class="btn teal" href="${dirUrl}" target="_blank" rel="noopener">Google Haritalar ile yol tarifi</a>
+        <a class="btn sec" href="${mapUrl}" target="_blank" rel="noopener">Haritada göster</a>
+      </div>`:''}`;
+
+    let layers='';
+    if(tr.history) layers += layer('Tarih', tr.history, '');
+    if(tr.fun) layers += layer('Biliyor muydun?', tr.fun, '');
+    if(tr.legend) layers += layer('Efsane / anlatı', tr.legend + ' — Bu bir anlatı veya efsane olabilir; belgelenmiş tarihten ayrı okuyun.', 'legend');
+    if(tr.look) layers += layer('Ne tarafa bak', tr.look, '');
+    if(tr.food) layers += layer('Yakında ye', tr.food, 'food');
+    const venues=p.venues||[];
+    if(venues.length){
+      layers += `<div class="card"><div class="layer food" style="border:0;padding:0;margin:0">
+        <div class="lab">Mekan önerileri (küratörlü 4+)</div>
+        <p class="dim" style="margin-bottom:6px">Küratörlü öneri (Google Haritalar / Foursquare kamuya açık bilgilere dayalı) · canlı puan değil · reklam değil</p>
+        ${venues.map(v=>`
+          <div class="venue">
+            <div>
+              <strong>${escapeHtml(v.name)}</strong>
+              <div class="dim">${escapeHtml(v.area||'')}${v.note?' · '+escapeHtml(v.note):''}${v.sourceHint?' · kaynak: '+escapeHtml(v.sourceHint==='both'?'Haritalar+Foursquare':v.sourceHint):''}</div>
+              ${v.reviews?`<div class="dim">${escapeHtml(String(v.reviews))}</div>`:''}
+            </div>
+            <div class="stars">★ ${escapeHtml(ratingOf(v))}</div>
+          </div>`).join('')}
+      </div></div>`;
+    }
+    if(p.sourceNote || (p.sources&&p.sources.length)){
+      const links=(p.sources||[]).map(s=>s.url?`<a href="${escapeHtml(s.url)}" target="_blank" rel="noopener" style="color:var(--teal)">${escapeHtml(s.title||s.url)}</a>`:escapeHtml(s.title||'')).join(' · ');
+      layers += `<div class="card"><div class="layer" style="border:0;padding:0;margin:0">
+        <div class="lab">Kaynak</div>
+        <p class="dim">${escapeHtml(p.sourceNote||'')}${links?'<br>'+links:''}</p>
+      </div></div>`;
+    }
+    $('placeLayers').innerHTML=layers;
+  }
+  function layer(lab, text, cls){
+    return `<div class="card"><div class="layer ${cls||''}" style="border:0;padding:0;margin:0">
+      <div class="lab">${lab}</div>
+      <p class="muted">${escapeHtml(text)}</p>
+    </div></div>`;
+  }
+  $('backFromPlace').onclick=()=>{
+    if(placeBack==='district' && currentDistrict){ show('district'); renderDistrict(currentDistrict); }
+    else if(placeBack==='city' && currentCity){ show('city'); renderCity(currentCity); }
+    else show(placeBack==='cities'?'cities':'explore');
+  };
+
+  function renderMe(){
+    $('simSw').classList.toggle('on', !!S.sim);
+    $('bigSw').classList.toggle('on', !!S.big);
+    document.documentElement.style.fontSize = S.big ? '18px' : '16px';
+    renderGps();
+    const box=$('teleportList');
+    const q=(($('qTeleport')||{}).value||'').trim().toLowerCase();
+    let list=PROVINCES.slice().sort((a,b)=>a.name.localeCompare(b.name,'tr'));
+    if(q) list=list.filter(c=>c.name.toLowerCase().includes(q)||String(c.plate||'').includes(q));
+    box.innerHTML = list.map(c=>`<button class="city-tile" data-cid="${c.id}"><span class="dim">${c.plate||''}</span> ${c.name}<small>${c.region}</small></button>`).join('');
+    box.querySelectorAll('[data-cid]').forEach(b=>{
+      b.onclick=()=>{
+        const c=PROVINCES.find(x=>x.id===b.dataset.cid);
+        teleportTo(c.lat,c.lng,c.name);
+        show('explore');
+      };
+    });
+  }
+  if($('qTeleport')) $('qTeleport').oninput=()=>renderMe();
+  $('simSw').onclick=()=>{
+    S.sim=!S.sim; save();
+    if(S.sim){
+      if(S.simLat==null){
+        const c=nearestCity();
+        S.simLat=c.lat; S.simLng=c.lng; save();
+      }
+      setPos(S.simLat,S.simLng,null,true);
+    } else {
+      pos=null; startGPS();
+    }
+    renderMe();
+  };
+  $('bigSw').onclick=()=>{ S.big=!S.big; save(); renderMe(); };
+
+  
+  const WIKI_THUMB_STEPS=[20,40,60,120,250,330,500,960,1280,1920,3840];
+  function wikiThumbUrl(u, prefer){
+    if(!u) return u;
+    const m=String(u).match(/^(https:\/\/upload\.wikimedia\.org\/wikipedia\/commons\/thumb\/.+\/)(\d+)(px-.+)$/);
+    if(!m) return u;
+    const want=prefer||parseInt(m[2],10)||500;
+    let step=WIKI_THUMB_STEPS[WIKI_THUMB_STEPS.length-1];
+    for(const s of WIKI_THUMB_STEPS){ if(s>=want){ step=s; break; } }
+    return m[1]+step+m[3];
+  }
+
+  function escapeHtml(s){
+    return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  const note = DATA.attribution || (DATA.sourcePolicy ? (DATA.sourcePolicy.history+' '+DATA.sourcePolicy.venues) : 'Küratörlü demo veri; canlı Places API değil.');
+  $('attrNote').textContent = note;
+  $('attrNote2').textContent = note;
+
+  if('serviceWorker' in navigator && location.protocol.startsWith('http')){
+    navigator.serviceWorker.register('./sw.js').catch(()=>{});
+  }
+
+  if(S.sim && S.simLat!=null){
+    setPos(S.simLat,S.simLng,null,true);
+  } else if(S.simLat==null){
+    const ist=PROVINCES.find(c=>c.id==='istanbul') || PROVINCES[0];
+    S.sim=true; S.simLat=ist.lat; S.simLng=ist.lng; save();
+    setPos(ist.lat,ist.lng,null,true);
+  }
+  startGPS();
+  show(S.lastTab==='cities'||S.lastTab==='me'?S.lastTab:'explore');
+})();
+</script>
+</body>
+</html>
