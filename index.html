@@ -103,11 +103,14 @@ button:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
 .layer.legend .lab{color:var(--amber)}
 .layer.food .lab{color:var(--red2)}
 .venue{
-  display:flex;justify-content:space-between;gap:10px;padding:10px 0;
+  display:flex;flex-direction:column;gap:8px;padding:12px 0;
   border-bottom:1px solid var(--line);
 }
 .venue:last-child{border-bottom:0}
+.venue .v-meta{font-size:.85rem;color:var(--muted)}
+.venue .btn{align-self:flex-start;font-size:.85rem;padding:8px 12px}
 .stars{color:var(--amber);font-weight:800;white-space:nowrap}
+.osm-attr{font-size:.72rem;color:var(--muted);margin-top:8px}
 .back{font-weight:800;color:var(--teal);margin-bottom:10px;padding:4px 0}
 .seg{display:flex;gap:6px;overflow-x:auto;padding-bottom:8px;margin-bottom:6px}
 .seg button{
@@ -311,7 +314,27 @@ button:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
   function walkMin(m){ return m==null?null:Math.max(1, Math.round(m/WALK_MPM)); }
 
   function ratingOf(v){
-    return v.ratingLabel || (v.rating ? ('Haritalar’da / Foursquare’de '+String(v.rating)+' — küratörlü') : 'Haritalar’da / Foursquare’de 4+ — küratörlü');
+    // legacy fallback; nearby OSM venues use distanceKm
+    if(v && v.distanceKm!=null) return fmtVenueDist(v.distanceKm);
+    return v.ratingLabel || (v.rating ? ('Haritalar’da / Foursquare’de '+String(v.rating)) : '');
+  }
+  function fmtVenueDist(km){
+    if(km==null || isNaN(km)) return '';
+    if(km < 1) return Math.round(km*1000)+' m';
+    const s = (Math.round(km*10)/10).toFixed(1).replace('.', ',');
+    return s+' km';
+  }
+  function venueKindLabel(v){
+    const kindMap={restaurant:'Restoran',cafe:'Kafe',fast_food:'Fast food'};
+    const k = kindMap[v.kind] || (v.kind||'');
+    if(v.cuisine) return (k?k+' · ':'')+String(v.cuisine).replace(/_/g,' ');
+    return k;
+  }
+  function venueLine(v){
+    if(!v) return '';
+    const d = v.distanceKm!=null ? fmtVenueDist(v.distanceKm) : '';
+    const bits=[d, venueKindLabel(v)].filter(Boolean);
+    return bits.length ? bits.join(' · ')+' · '+v.name : v.name;
   }
 
   function allPlaces(){
@@ -458,7 +481,7 @@ button:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
             <div class="tag">${p.cityName}${p.districtName?' · '+p.districtName:''} · ${p.tr.tag||'Yer'}</div>
             <h3 style="margin-top:4px">${p.tr.name}</h3>
             <div class="food-pill">🍽️ ${escapeHtml(foodShort)}${foodShort.length>=64?'…':''}</div>
-            ${topV?`<div class="dim" style="margin-top:6px">★ ${escapeHtml(ratingOf(topV))} · ${escapeHtml(topV.name)}</div>`:''}
+            ${topV?`<div class="dim" style="margin-top:6px">🍽️ ${escapeHtml(venueLine(topV))}</div>`:''}
           </div>
           <div class="dist">${fmtDist(p.d)}${wm!=null?`<small>~${wm} dk yürüme</small>`:''}</div>
         </div>
@@ -555,7 +578,7 @@ button:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
             <div class="tag">${p.districtName||''} · ${p.tr.tag||'Yer'}</div>
             <h3 style="margin-top:4px">${p.tr.name}</h3>
             <div class="food-pill">🍽️ ${(p.tr.food||'').split('—')[0].trim().slice(0,48)}</div>
-            ${topV?`<div class="dim" style="margin-top:6px">★ ${escapeHtml(ratingOf(topV))} · ${escapeHtml(topV.name)}</div>`:''}
+            ${topV?`<div class="dim" style="margin-top:6px">🍽️ ${escapeHtml(venueLine(topV))}</div>`:''}
           </div>
           <div class="dist">${fmtDist(p.d)}${wm!=null?`<small>~${wm} dk</small>`:''}</div>
         </div>
@@ -593,7 +616,7 @@ button:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
             <div class="tag">${dist.name} · ${p.tr.tag||'Yer'}</div>
             <h3 style="margin-top:4px">${p.tr.name}</h3>
             <div class="food-pill">🍽️ ${(p.tr.food||'').split('—')[0].trim().slice(0,48)}</div>
-            ${topV?`<div class="dim" style="margin-top:6px">★ ${escapeHtml(ratingOf(topV))} · ${escapeHtml(topV.name)}</div>`:''}
+            ${topV?`<div class="dim" style="margin-top:6px">🍽️ ${escapeHtml(venueLine(topV))}</div>`:''}
           </div>
           <div class="dist">${fmtDist(p.d)}${wm!=null?`<small>~${wm} dk</small>`:''}</div>
         </div>
@@ -651,17 +674,20 @@ button:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
     const venues=p.venues||[];
     if(venues.length){
       layers += `<div class="card"><div class="layer food" style="border:0;padding:0;margin:0">
-        <div class="lab">Mekan önerileri (küratörlü 4+)</div>
-        <p class="dim" style="margin-bottom:6px">Küratörlü öneri (Google Haritalar / Foursquare kamuya açık bilgilere dayalı) · canlı puan değil · reklam değil</p>
-        ${venues.map(v=>`
-          <div class="venue">
+        <div class="lab">Yakındaki restoranlar</div>
+        <p class="dim" style="margin-bottom:6px">OpenStreetMap’te adlı mekanlar · canlı puan değil · reklam değil</p>
+        ${venues.map(v=>{
+          const url = v.mapsUrl || (v.lat!=null && v.lng!=null ? `https://www.google.com/maps/dir/?api=1&destination=${v.lat},${v.lng}` : '');
+          const meta = [fmtVenueDist(v.distanceKm), venueKindLabel(v)].filter(Boolean).join(' · ');
+          return `<div class="venue">
             <div>
               <strong>${escapeHtml(v.name)}</strong>
-              <div class="dim">${escapeHtml(v.area||'')}${v.note?' · '+escapeHtml(v.note):''}${v.sourceHint?' · kaynak: '+escapeHtml(v.sourceHint==='both'?'Haritalar+Foursquare':v.sourceHint):''}</div>
-              ${v.reviews?`<div class="dim">${escapeHtml(String(v.reviews))}</div>`:''}
+              ${meta?`<div class="v-meta">${escapeHtml(meta)}</div>`:''}
             </div>
-            <div class="stars">★ ${escapeHtml(ratingOf(v))}</div>
-          </div>`).join('')}
+            ${url?`<a class="btn teal" href="${escapeHtml(url)}" target="_blank" rel="noopener">Yol tarifi — ${escapeHtml(v.name)}</a>`:''}
+          </div>`;
+        }).join('')}
+        <p class="osm-attr">© OpenStreetMap katkıcıları</p>
       </div></div>`;
     }
     if(p.sourceNote || (p.sources&&p.sources.length)){
@@ -735,7 +761,7 @@ button:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
     return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   }
 
-  const note = DATA.attribution || (DATA.sourcePolicy ? (DATA.sourcePolicy.history+' '+DATA.sourcePolicy.venues) : 'Küratörlü demo veri; canlı Places API değil.');
+  const note = DATA.attribution || (DATA.sourcePolicy ? (DATA.sourcePolicy.history+' '+DATA.sourcePolicy.venues) : 'OpenStreetMap + kültür kaynakları; canlı Places API değil.');
   $('attrNote').textContent = note;
   $('attrNote2').textContent = note;
 
