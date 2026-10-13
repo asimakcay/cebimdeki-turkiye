@@ -3,7 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#C41E3A">
+<meta name="theme-color" content="#0E0F11">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="description" content="81 ilde yakındaki yerler, tarih, efsane ve meşhur lezzetler — il / ilçe.">
@@ -13,152 +15,106 @@
 <script src="./data.js"></script>
 <style>
 :root{
-  --bg:#0B1220; --bg2:#121A2B; --card:#162033; --card2:#1C2940;
-  --line:rgba(255,255,255,.08); --text:#F4F7FB; --muted:#9AA8BC; --dim:#6B7A90;
-  --red:#C41E3A; --red2:#E11D48; --teal:#2EC4B6; --amber:#F4A261;
-  --r:20px; --shadow:0 12px 32px rgba(0,0,0,.35);
+  --bg:#0E0F11; --bg2:#131417; --card:#16181B; --card2:#1C1E22;
+  --line:rgba(255,255,255,.09); --line2:rgba(255,255,255,.16);
+  --text:#EDE9E3; --muted:#A8A39B; --dim:#8A857D;
+  --acc:#E0A44A; --acc-ink:#1A1206; --acc-soft:rgba(224,164,74,.12);
+  --red:var(--acc); --red2:var(--acc); --teal:var(--acc); --amber:var(--acc);
+  --r:10px; --serif:"Fraunces",Georgia,"Times New Roman",serif;
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html{font-size:16px}
-body{
-  margin:0; background:var(--bg); color:var(--text);
-  font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
-  line-height:1.45; min-height:100dvh;
-  padding-bottom:calc(84px + env(safe-area-inset-bottom));
-}
-body::before{
-  content:""; position:fixed; inset:0; pointer-events:none; z-index:0;
-  background:
-    radial-gradient(ellipse at 10% 0%, rgba(196,30,58,.28), transparent 50%),
-    radial-gradient(ellipse at 90% 10%, rgba(46,196,182,.18), transparent 45%),
-    radial-gradient(ellipse at 50% 100%, rgba(46,196,182,.08), transparent 40%);
-}
-h1,h2,h3{margin:0;font-weight:800;letter-spacing:-.02em;line-height:1.2}
-h1{font-size:1.45rem} h2{font-size:1.15rem} h3{font-size:1.02rem}
+body{margin:0;background:var(--bg);color:var(--text);
+  font-family:"Manrope",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+  line-height:1.55;min-height:100dvh;-webkit-font-smoothing:antialiased;
+  padding:env(safe-area-inset-top) env(safe-area-inset-right) calc(80px + env(safe-area-inset-bottom)) env(safe-area-inset-left)}
+h1,h2,h3{margin:0;font-family:var(--serif);font-weight:600;letter-spacing:-.01em;line-height:1.15}
+h1{font-size:1.9rem} h2{font-size:1.6rem} h3{font-size:1.12rem}
 p{margin:0} button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
-button:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
-.wrap{position:relative;z-index:1;max-width:560px;margin:0 auto;padding:18px 16px 8px}
+a{color:var(--acc)}
+button:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+.wrap{max-width:560px;margin:0 auto;padding:20px 16px 8px}
 .screen{display:none}.screen.on{display:block}
-.top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:14px}
-.brand{display:flex;flex-direction:column;gap:2px}
-.brand .sub{font-size:.78rem;color:var(--muted);font-weight:600}
-.chip{
-  display:inline-flex;align-items:center;gap:6px;font-size:.75rem;font-weight:700;
-  padding:6px 10px;border-radius:999px;background:var(--card);border:1px solid var(--line);color:var(--muted);
-}
-.chip.ok{color:var(--teal);border-color:rgba(46,196,182,.35);background:rgba(46,196,182,.1)}
-.chip.warn{color:var(--amber);border-color:rgba(244,162,97,.35)}
-.card{
-  background:linear-gradient(180deg,var(--card),var(--card2));
-  border:1px solid var(--line); border-radius:var(--r); padding:14px 14px;
-  margin-bottom:10px; box-shadow:var(--shadow);
-}
-.card.tap{cursor:pointer; transition:transform .08s, border-color .15s}
-.card.tap:active{transform:scale(.985)}
-.card.tap:hover{border-color:rgba(46,196,182,.35)}
+.top{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;margin-bottom:18px;padding-bottom:14px;border-bottom:1px solid var(--line)}
+.brand{display:flex;flex-direction:column;gap:4px}
+.brand .sub{font-size:.74rem;color:var(--dim);font-weight:600;letter-spacing:.08em;text-transform:uppercase}
+.chip{display:inline-flex;align-items:center;gap:6px;font-size:.72rem;font-weight:600;padding:5px 9px;border-radius:4px;border:1px solid var(--line);color:var(--muted)}
+.chip.ok{color:var(--acc);border-color:rgba(224,164,74,.35)}
+.chip.warn{color:#D9C7A8}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:16px;margin-bottom:12px}
+.card.tap{cursor:pointer;transition:border-color .15s}
+.card.tap:hover{border-color:var(--line2)}
+.card.tap:active{background:var(--card2)}
 .row{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
-.tag{font-size:.72rem;font-weight:700;color:var(--teal);text-transform:uppercase;letter-spacing:.04em}
-.muted{color:var(--muted);font-size:.88rem}
+.tag{font-size:.7rem;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:.08em}
+.muted{color:var(--muted);font-size:.92rem}
 .dim{color:var(--dim);font-size:.8rem}
-.dist{font-weight:800;color:var(--text);white-space:nowrap}
-.dist small{display:block;font-weight:600;color:var(--muted);font-size:.72rem}
-.food-pill{
-  display:inline-block;margin-top:8px;padding:5px 10px;border-radius:999px;
-  background:rgba(196,30,58,.15);color:#ffb3c0;font-size:.78rem;font-weight:700;
-}
-.btn{
-  display:flex;align-items:center;justify-content:center;gap:8px;width:100%;
-  min-height:48px;padding:0 16px;border-radius:999px;font-weight:800;
-  background:var(--red);color:#fff;margin-top:10px;
-}
-.btn.sec{background:transparent;border:1px solid var(--line);color:var(--text)}
-.btn.teal{background:var(--teal);color:#06201d}
-.btn.sm{min-height:40px;font-size:.9rem;width:auto;display:inline-flex;padding:0 14px}
-.btn:active{filter:brightness(.95)}
-.map-actions{display:flex;flex-direction:column;gap:8px;margin-top:12px}
-.map-actions .btn{margin-top:0;text-decoration:none}
-.ilce-pill{
-  display:inline-block;margin-top:6px;padding:4px 10px;border-radius:999px;
-  background:rgba(46,196,182,.14);color:var(--teal);font-size:.78rem;font-weight:800;
-}
-.nav{
-  position:fixed;left:0;right:0;bottom:0;z-index:20;
-  background:rgba(11,18,32,.92);backdrop-filter:blur(16px);
-  border-top:1px solid var(--line);
-  padding:8px 10px calc(8px + env(safe-area-inset-bottom));
-  display:flex;justify-content:center;gap:8px;
-}
-.nav .n{
-  flex:1;max-width:140px;display:flex;flex-direction:column;align-items:center;gap:2px;
-  padding:8px 6px;border-radius:14px;color:var(--dim);font-size:.72rem;font-weight:700;
-}
-.nav .n.on{color:var(--text);background:rgba(196,30,58,.18)}
-.nav .n span{font-size:1.15rem}
-.search{
-  width:100%;padding:12px 14px;border-radius:14px;border:1px solid var(--line);
-  background:var(--bg2);color:var(--text);margin-bottom:12px;font:inherit;
-}
-.layer{margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}
-.layer .lab{font-size:.72rem;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--teal);margin-bottom:6px}
-.layer.legend .lab{color:var(--amber)}
-.layer.food .lab{color:var(--red2)}
-.venue{
-  display:flex;flex-direction:column;gap:8px;padding:12px 0;
-  border-bottom:1px solid var(--line);
-}
-.venue:last-child{border-bottom:0}
-.venue .v-meta{font-size:.85rem;color:var(--muted)}
-.venue .btn{align-self:flex-start;font-size:.85rem;padding:8px 12px}
-.stars{color:var(--amber);font-weight:800;white-space:nowrap}
-.osm-attr{font-size:.72rem;color:var(--muted);margin-top:8px}
-.back{font-weight:800;color:var(--teal);margin-bottom:10px;padding:4px 0}
-.seg{display:flex;gap:6px;overflow-x:auto;padding-bottom:8px;margin-bottom:6px}
-.seg button{
-  flex:0 0 auto;padding:8px 12px;border-radius:999px;background:var(--card);
-  border:1px solid var(--line);font-size:.8rem;font-weight:700;color:var(--muted);
-}
-.seg button.on{background:rgba(46,196,182,.15);color:var(--teal);border-color:rgba(46,196,182,.4)}
+.dist{font-weight:700;color:var(--text);white-space:nowrap;font-size:.85rem;text-align:right}
+.dist small{display:block;font-weight:500;color:var(--dim);font-size:.72rem}
+.food-pill{display:block;margin-top:6px;color:var(--acc);font-size:.82rem;font-weight:600}
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:46px;padding:0 16px;border-radius:6px;font-weight:700;font-size:.92rem;background:var(--acc);color:var(--acc-ink);margin-top:10px;text-decoration:none}
+.btn.sec{background:transparent;border:1px solid var(--line2);color:var(--text)}
+.btn.teal{background:var(--acc);color:var(--acc-ink)}
+.btn.sm{min-height:38px;font-size:.84rem;width:auto;display:inline-flex;padding:0 12px}
+.btn:active{filter:brightness(.92)}
+.map-actions{display:flex;gap:8px;margin-top:14px}
+.map-actions .btn{margin-top:0;flex:1}
+.ilce-pill{display:inline-block;margin-top:8px;font-size:.78rem;font-weight:600;color:var(--muted)}
+.nav{position:fixed;left:0;right:0;bottom:0;z-index:20;background:rgba(14,15,17,.94);backdrop-filter:blur(14px);border-top:1px solid var(--line);
+  padding:6px calc(10px + env(safe-area-inset-right)) calc(6px + env(safe-area-inset-bottom)) calc(10px + env(safe-area-inset-left));display:flex;justify-content:center;gap:4px}
+.nav .n{flex:1;max-width:140px;padding:12px 6px;color:var(--dim);font-size:.78rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;border-top:2px solid transparent}
+.nav .n.on{color:var(--text);border-top-color:var(--acc)}
+.nav .n span{display:none}
+.search{width:100%;padding:13px 14px;border-radius:6px;border:1px solid var(--line);background:var(--bg2);color:var(--text);margin-bottom:12px;font:inherit}
+.search::placeholder{color:var(--dim)}
+.layer .lab{font-size:.7rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--acc);margin-bottom:8px}
+.layer.legend p{font-family:var(--serif);font-style:italic;font-size:1rem;color:var(--text)}
+.venue{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;padding:14px 0;border-bottom:1px solid var(--line)}
+.venue:last-of-type{border-bottom:0}
+.venue strong{font-weight:700}
+.venue .v-meta{font-size:.82rem;color:var(--dim)}
+.venue .btn{margin-top:0;width:100%;min-height:42px;font-size:.86rem}
+.stars{color:var(--acc);font-weight:700;white-space:nowrap}
+.osm-attr{font-size:.72rem;color:var(--dim);margin-top:8px}
+.back{font-weight:600;color:var(--muted);margin-bottom:12px;padding:6px 0;font-size:.9rem}
+.seg{display:flex;gap:6px;overflow-x:auto;padding-bottom:10px;margin-bottom:8px;scrollbar-width:none}
+.seg button{flex:0 0 auto;padding:7px 12px;border-radius:4px;border:1px solid var(--line);font-size:.8rem;font-weight:600;color:var(--muted)}
+.seg button.on{background:var(--text);color:var(--bg);border-color:var(--text)}
 .toggle{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid var(--line)}
 .toggle:last-child{border-bottom:0}
-.sw{
-  width:48px;height:28px;border-radius:999px;background:#2a3548;position:relative;transition:.15s;
-}
-.sw.on{background:var(--teal)}
-.sw i{position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;transition:.15s}
+.sw{width:46px;height:26px;border-radius:999px;background:#2A2C30;position:relative;transition:.15s}
+.sw.on{background:var(--acc)}
+.sw i{position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#EDE9E3;transition:.15s}
 .sw.on i{left:23px}
-.city-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.city-tile{
-  background:var(--card);border:1px solid var(--line);border-radius:16px;padding:12px;
-  text-align:left;font-weight:800;
-}
-.city-tile small{display:block;font-weight:600;color:var(--muted);margin-top:4px}
-.toast{
-  position:fixed;left:50%;bottom:100px;transform:translateX(-50%) translateY(20px);
-  background:#fff;color:#111;padding:10px 16px;border-radius:999px;font-weight:700;font-size:.88rem;
-  opacity:0;pointer-events:none;transition:.2s;z-index:40;white-space:nowrap;
-}
+.city-grid{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.city-tile{background:var(--bg);padding:14px 12px;text-align:left;font-family:var(--serif);font-size:1.05rem;font-weight:600}
+.city-tile:hover{background:var(--card)}
+.city-tile small{display:block;font-family:"Manrope",system-ui,sans-serif;font-weight:500;color:var(--dim);font-size:.74rem;margin-top:4px}
+.toast{position:fixed;left:50%;bottom:100px;transform:translateX(-50%) translateY(20px);background:var(--text);color:var(--bg);padding:10px 16px;border-radius:6px;font-weight:700;font-size:.88rem;opacity:0;pointer-events:none;transition:.2s;z-index:40;white-space:nowrap}
 .toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
-.footer-note{font-size:.72rem;color:var(--dim);line-height:1.4;margin-top:16px;padding:12px;border-radius:14px;background:rgba(255,255,255,.03);border:1px solid var(--line)}
+.footer-note{font-size:.72rem;color:var(--dim);line-height:1.5;margin-top:20px;padding-top:14px;border-top:1px solid var(--line)}
 .empty{text-align:center;padding:28px 12px;color:var(--muted)}
-
-.place-photo{
-  margin:12px 0 4px; border-radius:14px; overflow:hidden;
-  border:1px solid var(--line); background:#0a101c;
-  aspect-ratio:16/9; max-height:220px;
-}
-.place-photo img{
-  display:block; width:100%; height:100%; object-fit:cover;
-}
-.photo-attr{
-  font-size:.7rem; color:var(--dim); line-height:1.35; margin:6px 0 2px;
-}
-.photo-attr a{color:var(--teal); text-decoration:none; font-weight:600}
-.card-thumb{
-  flex:0 0 56px; width:56px; height:56px; border-radius:12px; overflow:hidden;
-  border:1px solid var(--line); background:#0a101c; margin-right:2px;
-}
-.card-thumb img{display:block;width:100%;height:100%;object-fit:cover}
-.row.with-thumb{align-items:center}
+/* photo-first list cards */
+.pcard{padding:0;overflow:hidden}
+.pcard .pc-img{position:relative;aspect-ratio:16/10;background:#1A1B1E}
+.pcard .pc-img img{display:block;width:100%;height:100%;object-fit:cover}
+.pcard .pc-img .pc-dist{position:absolute;right:10px;top:10px;background:rgba(14,15,17,.82);color:var(--text);font-size:.74rem;font-weight:700;padding:4px 8px;border-radius:4px}
+.pcard .pc-body{padding:12px 14px 14px}
+.pcard h3{font-size:1.25rem;margin:4px 0 2px}
+.hero .ph-empty{align-items:flex-start;padding-top:56px}
+.ph-empty{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:repeating-linear-gradient(135deg,#17181B 0 12px,#1A1B1F 12px 24px);color:#4A4740;font-family:var(--serif);font-size:3.4rem;font-weight:600}
+/* detail hero */
+#placeHead{padding:0;overflow:hidden}
+.hero{position:relative;min-height:300px;background:#1A1B1E;display:flex;align-items:flex-end}
+.hero img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.hero::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(14,15,17,0) 30%,rgba(14,15,17,.6) 60%,rgba(14,15,17,.97) 100%)}
+.hero-txt{position:relative;z-index:1;padding:18px 16px 16px}
+.hero-txt .tag{color:#CFC9BF}
+.hero-txt h2{font-size:2rem;margin-top:6px;color:#F5F2EC}
+.hero-txt .muted{color:#CFC9BF}
+.head-body{padding:12px 16px 16px}
+.photo-attr{font-size:.68rem;color:var(--dim);line-height:1.4}
+.photo-attr a{color:var(--muted);font-weight:600}
 </style>
 </head>
 <body>
@@ -259,9 +215,9 @@ button:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
 </div>
 
 <nav class="nav" aria-label="Ana menü">
-  <button class="n on" data-tab="explore"><span>🧭</span>Keşfet</button>
-  <button class="n" data-tab="cities"><span>🏙️</span>İller</button>
-  <button class="n" data-tab="me"><span>👤</span>Ben</button>
+  <button class="n on" data-tab="explore">Keşfet</button>
+  <button class="n" data-tab="cities">İller</button>
+  <button class="n" data-tab="me">Ben</button>
 </nav>
 <div class="toast" id="toast"></div>
 
@@ -473,17 +429,16 @@ button:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
       const wm=walkMin(p.d);
       const foodShort=(p.tr.food||'').split('—')[0].trim().slice(0,64);
       const topV=(p.venues||[])[0];
-      const thumb=p.photo&&wikiThumbUrl(p.photo.thumbUrl||p.photo.url,250);
-      return `<article class="card tap" data-pid="${p.id}" data-cid="${p.cityId}" data-did="${p.districtId}">
-        <div class="row with-thumb">
-          ${thumb?`<div class="card-thumb"><img src="${escapeHtml(thumb)}" alt="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></div>`:''}
-          <div style="flex:1;min-width:0">
+      const thumb=p.photo&&wikiThumbUrl(p.photo.thumbUrl||p.photo.url,500);
+      return `<article class="card tap pcard" data-pid="${p.id}" data-cid="${p.cityId}" data-did="${p.districtId}">
+        <div class="pc-img">${thumb?`<img src="${escapeHtml(thumb)}" alt="" loading="lazy" referrerpolicy="no-referrer-when-downgrade">`:`<div class="ph-empty" aria-hidden="true">${escapeHtml((p.tr.name||'?').charAt(0))}</div>`}<span class="pc-dist">${fmtDist(p.d)}${wm!=null?` · ${wm} dk`:''}</span></div>
+        <div class="pc-body">
+          <div>
             <div class="tag">${p.cityName}${p.districtName?' · '+p.districtName:''} · ${p.tr.tag||'Yer'}</div>
             <h3 style="margin-top:4px">${p.tr.name}</h3>
-            <div class="food-pill">🍽️ ${escapeHtml(foodShort)}${foodShort.length>=64?'…':''}</div>
-            ${topV?`<div class="dim" style="margin-top:6px">🍽️ ${escapeHtml(venueLine(topV))}</div>`:''}
+            <div class="food-pill">${escapeHtml(foodShort)}${foodShort.length>=64?'…':''}</div>
+            ${topV?`<div class="dim" style="margin-top:6px">${escapeHtml(venueLine(topV))}</div>`:''}
           </div>
-          <div class="dist">${fmtDist(p.d)}${wm!=null?`<small>~${wm} dk yürüme</small>`:''}</div>
         </div>
       </article>`;
     }).join('');
@@ -570,17 +525,16 @@ button:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
     box.innerHTML = items.map(p=>{
       const wm=walkMin(p.d);
       const topV=(p.venues||[])[0];
-      const thumb=p.photo&&wikiThumbUrl(p.photo.thumbUrl||p.photo.url,250);
-      return `<article class="card tap" data-pid="${p.id}" data-did="${p.districtId}">
-        <div class="row with-thumb">
-          ${thumb?`<div class="card-thumb"><img src="${escapeHtml(thumb)}" alt="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></div>`:''}
-          <div style="flex:1;min-width:0">
+      const thumb=p.photo&&wikiThumbUrl(p.photo.thumbUrl||p.photo.url,500);
+      return `<article class="card tap pcard" data-pid="${p.id}" data-did="${p.districtId}">
+        <div class="pc-img">${thumb?`<img src="${escapeHtml(thumb)}" alt="" loading="lazy" referrerpolicy="no-referrer-when-downgrade">`:`<div class="ph-empty" aria-hidden="true">${escapeHtml((p.tr.name||'?').charAt(0))}</div>`}<span class="pc-dist">${fmtDist(p.d)}${wm!=null?` · ${wm} dk`:''}</span></div>
+        <div class="pc-body">
+          <div>
             <div class="tag">${p.districtName||''} · ${p.tr.tag||'Yer'}</div>
             <h3 style="margin-top:4px">${p.tr.name}</h3>
-            <div class="food-pill">🍽️ ${(p.tr.food||'').split('—')[0].trim().slice(0,48)}</div>
-            ${topV?`<div class="dim" style="margin-top:6px">🍽️ ${escapeHtml(venueLine(topV))}</div>`:''}
+            <div class="food-pill">${(p.tr.food||'').split('—')[0].trim().slice(0,48)}</div>
+            ${topV?`<div class="dim" style="margin-top:6px">${escapeHtml(venueLine(topV))}</div>`:''}
           </div>
-          <div class="dist">${fmtDist(p.d)}${wm!=null?`<small>~${wm} dk</small>`:''}</div>
         </div>
       </article>`;
     }).join('');
@@ -608,17 +562,16 @@ button:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
     box.innerHTML = items.map(p=>{
       const wm=walkMin(p.d);
       const topV=(p.venues||[])[0];
-      const thumb=p.photo&&wikiThumbUrl(p.photo.thumbUrl||p.photo.url,250);
+      const thumb=p.photo&&wikiThumbUrl(p.photo.thumbUrl||p.photo.url,500);
       return `<article class="card tap" data-pid="${p.id}">
         <div class="row with-thumb">
           ${thumb?`<div class="card-thumb"><img src="${escapeHtml(thumb)}" alt="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></div>`:''}
           <div style="flex:1;min-width:0">
             <div class="tag">${dist.name} · ${p.tr.tag||'Yer'}</div>
             <h3 style="margin-top:4px">${p.tr.name}</h3>
-            <div class="food-pill">🍽️ ${(p.tr.food||'').split('—')[0].trim().slice(0,48)}</div>
-            ${topV?`<div class="dim" style="margin-top:6px">🍽️ ${escapeHtml(venueLine(topV))}</div>`:''}
+            <div class="food-pill">${(p.tr.food||'').split('—')[0].trim().slice(0,48)}</div>
+            ${topV?`<div class="dim" style="margin-top:6px">${escapeHtml(venueLine(topV))}</div>`:''}
           </div>
-          <div class="dist">${fmtDist(p.d)}${wm!=null?`<small>~${wm} dk</small>`:''}</div>
         </div>
       </article>`;
     }).join('');
@@ -651,19 +604,23 @@ button:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
     }
     const ph = p.photo;
     const photoSrc = ph && wikiThumbUrl(ph.thumbUrl || ph.url, 960);
-    const photoBlock = photoSrc ? `
-      <div class="place-photo"><img src="${escapeHtml(photoSrc)}" alt="${escapeHtml(tr.name||'')}" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></div>
-      <div class="photo-attr">${escapeHtml(ph.attribution||'Photo: Wikimedia Commons')}${ph.license?' · '+escapeHtml(ph.license):''}${ph.commonsUrl?` · <a href="${escapeHtml(ph.commonsUrl)}" target="_blank" rel="noopener">Commons</a>`:''}</div>` : '';
+    const attr = photoSrc ? `<div class="photo-attr">${escapeHtml(ph.attribution||'Wikimedia Commons')}${ph.license?' · '+escapeHtml(ph.license):''}${ph.commonsUrl?` · <a href="${escapeHtml(ph.commonsUrl)}" target="_blank" rel="noopener">Commons</a>`:''}</div>` : '';
     $('placeHead').innerHTML = `
-      <div class="tag">${city?city.name:''}${ilce?' · '+ilce:''} · ${tr.tag||''}</div>
-      <h2 style="margin-top:6px">${tr.name}</h2>
-      ${ilce?`<div class="ilce-pill">İlçe: ${escapeHtml(ilce)}</div>`:''}
-      <div class="muted" style="margin-top:8px">${fmtDist(d)}${wm!=null?` · ~${wm} dk yürüme`:''}</div>
-      ${photoBlock}
-      ${dirUrl?`<div class="map-actions">
-        <a class="btn teal" href="${dirUrl}" target="_blank" rel="noopener">Google Haritalar ile yol tarifi</a>
-        <a class="btn sec" href="${mapUrl}" target="_blank" rel="noopener">Haritada göster</a>
-      </div>`:''}`;
+      <div class="hero">
+        ${photoSrc?`<img src="${escapeHtml(photoSrc)}" alt="${escapeHtml(tr.name||'')}" referrerpolicy="no-referrer-when-downgrade">`:`<div class="ph-empty" aria-hidden="true">${escapeHtml((tr.name||'?').charAt(0))}</div>`}
+        <div class="hero-txt">
+          <div class="tag">${city?city.name:''}${ilce?' · '+ilce:''} · ${tr.tag||''}</div>
+          <h2>${tr.name}</h2>
+          <div class="muted" style="margin-top:6px">${ilce?`İlçe: ${escapeHtml(ilce)} · `:''}${fmtDist(d)}${wm!=null?` · ~${wm} dk yürüme`:''}</div>
+        </div>
+      </div>
+      <div class="head-body">
+        ${attr}
+        ${dirUrl?`<div class="map-actions">
+          <a class="btn" href="${dirUrl}" target="_blank" rel="noopener">Yol tarifi</a>
+          <a class="btn sec" href="${mapUrl}" target="_blank" rel="noopener">Haritada göster</a>
+        </div>`:''}
+      </div>`;
 
     let layers='';
     if(tr.history) layers += layer('Tarih', tr.history, '');

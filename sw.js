@@ -1,5 +1,5 @@
 /* Cebimdeki Türkiye — basit offline önbellek */
-const CACHE = 'ct-v3-venues';
+const CACHE = 'ct-v4-dark';
 const ASSETS = [
   './',
   './index.html',
