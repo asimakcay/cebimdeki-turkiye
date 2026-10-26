@@ -83,6 +83,8 @@ button:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid var(-
 .venue:last-of-type{border-bottom:0}
 .venue strong{font-weight:800;color:var(--text)}
 .venue .v-meta{font-size:.82rem;color:var(--dim)}
+.venue .v-note{font-size:.78rem;font-weight:700;color:var(--terra-d);margin-top:2px}
+.venue .v-src{font-size:.74rem;color:var(--dim)}
 .venue .btn{margin-top:0;width:100%;min-height:44px;font-size:.88rem}
 .stars{color:var(--terra);font-weight:800}
 .osm-attr{font-size:.74rem;color:var(--dim);margin-top:8px}
@@ -356,7 +358,7 @@ body.is-offline .offline-banner{display:block}
     return s+' km';
   }
   function venueKindLabel(v){
-    const kindMap={restaurant:'Restoran',cafe:'Kafe',fast_food:'Fast food'};
+    const kindMap={restaurant:'Restoran',cafe:'Kafe',fast_food:'Fast food',bakery:'Fırın',pastry:'Pastane',confectionery:'Pastane',ice_cream:'Dondurma'};
     const k = kindMap[v.kind] || (v.kind||'');
     if(v.cuisine) return (k?k+' · ':'')+String(v.cuisine).replace(/_/g,' ');
     return k;
@@ -713,7 +715,7 @@ body.is-offline .offline-banner{display:block}
     if(venues.length){
       layers += `<div class="card"><div class="layer food" style="border:0;padding:0;margin:0">
         <div class="lab">Yakındaki restoranlar</div>
-        <p class="dim" style="margin-bottom:6px">OpenStreetMap’te adlı mekanlar · canlı puan değil · reklam değil</p>
+        <p class="dim" style="margin-bottom:6px">OpenStreetMap ve kamuya açık kaynaklardaki adlı mekanlar · canlı puan değil · reklam değil</p>
         ${venues.map(v=>{
           const url = v.mapsUrl || (v.lat!=null && v.lng!=null ? `https://www.google.com/maps/dir/?api=1&destination=${v.lat},${v.lng}` : '');
           const meta = [fmtVenueDist(v.distanceKm), venueKindLabel(v)].filter(Boolean).join(' · ');
@@ -721,6 +723,8 @@ body.is-offline .offline-banner{display:block}
             <div>
               <strong>${escapeHtml(v.name)}</strong>
               ${meta?`<div class="v-meta">${escapeHtml(meta)}</div>`:''}
+              ${v.note?`<div class="v-note">${escapeHtml(v.note)}</div>`:''}
+              ${v.sourceUrl?`<div class="v-src"><a href="${escapeHtml(v.sourceUrl)}" target="_blank" rel="noopener">${escapeHtml(v.source||'Kaynak')}</a></div>`:''}
             </div>
             ${url?`<a class="btn teal" href="${escapeHtml(url)}" target="_blank" rel="noopener">Yol tarifi — ${escapeHtml(v.name)}</a>`:''}
           </div>`;
