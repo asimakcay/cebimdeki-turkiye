@@ -151,6 +151,17 @@ body.is-offline .offline-banner{display:block}
 .ok-badge{display:inline-block;background:rgba(107,127,58,.14);color:#4E5E27;font-weight:800;font-size:.78rem;padding:3px 10px;border-radius:999px}
 .rlist{list-style:none;margin:0;padding:0}
 .ritem{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:8px;margin-bottom:8px;box-shadow:var(--sh)}
+.rsug-box{margin:-2px 0 10px 38px;padding:6px 10px;border-left:3px solid var(--teal);background:rgba(0,128,128,.05);border-radius:0 10px 10px 0}
+.rsug-box .lab{font-size:.7rem;letter-spacing:.06em;text-transform:uppercase;color:var(--teal);font-weight:700}
+.rsug-box.mola{border-left-color:var(--blue);background:rgba(0,60,140,.05);margin-left:0}
+.rsug{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 0;border-bottom:1px dashed var(--line2)}
+.rsug:last-of-type{border-bottom:0}
+.rsug-t{min-width:0}.rsug-t strong{display:block;font-size:.9rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.rsug-t .dim{font-size:.75rem}
+.rsug-b{display:flex;gap:6px;flex:0 0 auto}
+.mini{font:inherit;font-size:.75rem;font-weight:700;padding:6px 9px;border-radius:999px;border:1px solid var(--teal);color:var(--teal);background:#fff;text-decoration:none;cursor:pointer}
+.mini.add{background:var(--teal);color:#fff}
+.rloop{display:flex;align-items:center;gap:8px;margin:0 0 12px;font-weight:600;cursor:pointer}
+.ritem.back{opacity:.8;box-shadow:none;border-style:dashed}.ritem.venue-stop{border-color:var(--teal)}
 .ritem.drag{opacity:.5}
 .ritem .num{flex:0 0 28px;height:28px;border-radius:50%;background:var(--blue);color:#fff;font-weight:800;display:flex;align-items:center;justify-content:center;font-size:.85rem}
 .ritem .rth{flex:0 0 52px;height:52px;border-radius:8px;overflow:hidden;background:var(--sea);position:relative}
@@ -866,44 +877,164 @@ body.is-offline .offline-banner{display:block}
     openPlace(orig||p, city, back, dist);
   }
 
-  /* ---- Rota ---- */
-  function routePlaces(){ return S.route.map(id=>PLACE_BY_ID.get(id)).filter(Boolean); }
-  function optimizeRoute(start){
-    let rest=routePlaces(); if(rest.length<2) return;
-    let cur = start || rest[0];
-    const out=[];
-    if(!start){ out.push(rest.shift()); cur=out[0]; }
-    while(rest.length){
-      let bi=0,bd=Infinity;
-      rest.forEach((p,i)=>{ const d=haversine(cur,p); if(d<bd){bd=d;bi=i;} });
-      cur=rest.splice(bi,1)[0]; out.push(cur);
+  /* ---- Rota (v9) ---- */
+  if(!S.routeV) S.routeV={};
+  function venueStop(id){
+    const v=S.routeV[id]; if(!v) return null;
+    return {id, lat:v.lat, lng:v.lng, isVenue:true, venue:v, tr:{name:v.name, tag:'Yemek molası'}, cityName:v.cityName||'', districtName:v.districtName||''};
+  }
+  function stopById(id){ return id.startsWith('v:') ? venueStop(id) : PLACE_BY_ID.get(id); }
+  function routePlaces(){ return S.route.map(stopById).filter(p=>p && p.lat!=null && p.lng!=null); }
+  const routeStart = () => (pos && !(pos.sim && !S.sim)) ? {lat:pos.lat,lng:pos.lng,_me:true} : null; // geçici ilk-açılış konumu rota başlangıcı sayılmaz
+  // Mesafe matrisi: OSRM (çevrimiçi, yol) → yoksa kuş uçuşu × 1,3 tahmini
+  const MX_CACHE=new Map();
+  const mxKey = pts => pts.map(p=>p.lat.toFixed(5)+','+p.lng.toFixed(5)).join(';');
+  function havMatrix(pts){
+    const d=pts.map(a=>pts.map(b=>haversine(a,b)*1.3));
+    const t=d.map(r=>r.map(m=>m/ (m<8000?7:m<40000?13:20))); // ~25 / 47 / 72 km/sa
+    return {d,t,src:'est'};
+  }
+  async function osrmMatrix(pts){
+    const key=mxKey(pts); if(MX_CACHE.has(key)) return MX_CACHE.get(key);
+    if(!navigator.onLine || pts.length<2 || pts.length>40) return null;
+    try{
+      const ctl=new AbortController(); const tm=setTimeout(()=>ctl.abort(),5000);
+      const r=await fetch('https://router.project-osrm.org/table/v1/driving/'+pts.map(p=>`${p.lng.toFixed(6)},${p.lat.toFixed(6)}`).join(';')+'?annotations=distance,duration',{signal:ctl.signal});
+      clearTimeout(tm);
+      const j=await r.json(); if(j.code!=='Ok' || !j.distances) return null;
+      const est=havMatrix(pts);
+      const d=j.distances.map((row,i)=>row.map((v,k)=>v==null?est.d[i][k]:v));
+      const t=j.durations.map((row,i)=>row.map((v,k)=>v==null?est.t[i][k]:v));
+      const m={d,t,src:'osrm'}; MX_CACHE.set(key,m); return m;
+    }catch(e){ return null; }
+  }
+  function cachedMatrix(pts){ return MX_CACHE.get(mxKey(pts)) || havMatrix(pts); }
+  // Sıra optimizasyonu. M: n×n, 0 = sabit başlangıç (varsa). loop: başa dönüş.
+  function pathCost(M,ord,fixed,loop){
+    let s=0; for(let i=1;i<ord.length;i++) s+=M[ord[i-1]][ord[i]];
+    if(fixed && ord.length) s+=M[0][ord[0]];
+    if(loop && ord.length) s+= fixed ? M[ord[ord.length-1]][0] : M[ord[ord.length-1]][ord[0]];
+    return s;
+  }
+  function heldKarp(M,nodes,start,loop){ // start: sabit düğüm index'i (M içinde)
+    const n=nodes.length, FULL=(1<<n)-1;
+    const dp=new Float64Array((1<<n)*n).fill(Infinity), par=new Int16Array((1<<n)*n).fill(-1);
+    for(let j=0;j<n;j++) dp[(1<<j)*n+j]=M[start][nodes[j]];
+    for(let s=1;s<=FULL;s++) for(let j=0;j<n;j++){
+      const c=dp[s*n+j]; if(!(s&(1<<j)) || c===Infinity) continue;
+      for(let k=0;k<n;k++){ if(s&(1<<k)) continue;
+        const ns=s|(1<<k), v=c+M[nodes[j]][nodes[k]];
+        if(v<dp[ns*n+k]){ dp[ns*n+k]=v; par[ns*n+k]=j; } }
     }
-    S.route=out.map(p=>p.id); save();
+    let bj=0,bc=Infinity;
+    for(let j=0;j<n;j++){ const v=dp[FULL*n+j]+(loop?M[nodes[j]][start]:0); if(v<bc){bc=v;bj=j;} }
+    const out=[]; let s=FULL, j=bj;
+    while(j>=0){ out.push(nodes[j]); const pj=par[s*n+j]; s&=~(1<<j); j=pj; }
+    return out.reverse();
+  }
+  function nn2opt(M,nodes,start,loop,fixed){
+    let rest=nodes.slice(), cur=start, ord=[];
+    if(!fixed){ cur=rest.shift(); ord.push(cur); }
+    while(rest.length){ let bi=0; rest.forEach((x,i)=>{ if(M[cur][x]<M[cur][rest[bi]]) bi=i; }); cur=rest.splice(bi,1)[0]; ord.push(cur); }
+    let imp=true, guard=0;
+    while(imp && guard++<200){ imp=false;
+      for(let i=fixed?0:1;i<ord.length-1;i++) for(let k=i+1;k<ord.length;k++){
+        const cand=ord.slice(0,i).concat(ord.slice(i,k+1).reverse(), ord.slice(k+1));
+        if(pathCost(M,cand,fixed,loop)+1e-6<pathCost(M,ord,fixed,loop)){ ord=cand; imp=true; }
+      }
+      // or-opt: tek durağı başka yere taşı
+      for(let i=0;i<ord.length;i++) for(let k=0;k<ord.length;k++){ if(i===k) continue;
+        const c=ord.slice(); const [x]=c.splice(i,1); c.splice(k,0,x);
+        if(pathCost(M,c,fixed,loop)+1e-6<pathCost(M,ord,fixed,loop)){ ord=c; imp=true; }
+      }
+    }
+    return ord;
+  }
+  function bestOrder(M,count,fixed,loop){
+    // M indeksleri: fixed ise 0=başlangıç, duraklar 1..count; değilse 0..count-1
+    const off=fixed?1:0, nodes=[...Array(count).keys()].map(i=>i+off);
+    if(count<2) return nodes;
+    if(count<=12){
+      if(fixed) return heldKarp(M,nodes,0,loop);
+      let best=null,bc=Infinity; // serbest başlangıç: her durağı başlangıç dene
+      for(const s of nodes){ const rest=nodes.filter(x=>x!==s); const o=[s,...(rest.length?heldKarp(M,rest,s,false):[])];
+        const oo = loop ? [s,...heldKarp(M,rest,s,true)] : o;
+        const c=pathCost(M,oo,false,loop); if(c<bc){bc=c;best=oo;} if(loop) break; }
+      return best;
+    }
+    return nn2opt(M,nodes,0,loop,fixed);
+  }
+  async function optimizeRoute(start, opts={}){
+    const ps=routePlaces(); if(ps.length<2) return null;
+    const pts=(start?[start]:[]).concat(ps);
+    let M = opts.offline ? null : await osrmMatrix(pts);
+    const src = M ? 'osrm' : 'est';
+    if(!M){ const h=havMatrix(pts); M={d:h.d}; }
+    const ord=bestOrder(M.d, ps.length, !!start, !!S.routeLoop);
+    S.route=ord.map(i=>ps[i-(start?1:0)].id); save();
+    return src;
   }
   function routeLegs(){
-    const ps=routePlaces();
-    const pts=(pos?[{lat:pos.lat,lng:pos.lng,_me:true}]:[]).concat(ps);
+    const ps=routePlaces(), st=routeStart();
+    const pts=(st?[st]:[]).concat(ps);
+    if(S.routeLoop && pts.length>1) pts.push(pts[0]);
+    const M=cachedMatrix(pts.slice(0, S.routeLoop&&pts.length>1?-1:undefined));
+    const n=M.d.length, idx=i=>i%n;
     const legs=[];
-    for(let i=1;i<pts.length;i++) legs.push(haversine(pts[i-1],pts[i]));
-    return {legs, hasStart:!!pos};
+    for(let i=1;i<pts.length;i++) legs.push({d:M.d[idx(i-1)][idx(i)], t:M.t[idx(i-1)][idx(i)]});
+    return {legs, hasStart:!!st, src:M.src, pts};
   }
+  function fmtDur(s){ const m=Math.max(1,Math.round(s/60)); return m<60?m+' dk':Math.floor(m/60)+' sa '+(m%60?m%60+' dk':''); }
   function mapsLegUrls(){
     const ps=routePlaces(); if(!ps.length) return [];
-    const ll=p=>`${p.lat},${p.lng}`;
-    const pts=(pos?[{lat:pos.lat,lng:pos.lng}]:[]).concat(ps);
-    if(pts.length===1) return [{url:`https://www.google.com/maps/dir/?api=1&destination=${ll(pts[0])}`,from:1,to:1}];
-    const out=[]; let i=0;
+    const ll=p=>`${(+p.lat).toFixed(6)},${(+p.lng).toFixed(6)}`;
+    const st=routeStart();
+    const pts=(st?[st]:[]).concat(ps);
+    if(S.routeLoop && pts.length>1) pts.push(pts[0]);
+    if(pts.length===1) return [{url:`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(ll(pts[0]))}&travelmode=driving`,from:1,to:1}];
+    const out=[]; let i=0; const off=st?0:1, nStops=ps.length;
     while(i<pts.length-1){
-      const end=Math.min(i+10, pts.length-1); // origin + up to 9 waypoints + destination
+      const end=Math.min(i+10, pts.length-1); // başlangıç + en fazla 9 ara durak + varış
       const wp=pts.slice(i+1,end).map(ll).join('|');
-      const url=`https://www.google.com/maps/dir/?api=1&origin=${ll(pts[i])}&destination=${ll(pts[end])}`+(wp?`&waypoints=${encodeURIComponent(wp)}`:'')+'&travelmode=driving';
-      const off=pos?0:1;
-      out.push({url, from:Math.max(1,i+off), to:end+off});
+      const url=`https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(ll(pts[i]))}&destination=${encodeURIComponent(ll(pts[end]))}`+(wp?`&waypoints=${encodeURIComponent(wp)}`:'')+'&travelmode=driving';
+      out.push({url, from:Math.max(1,i+off), to:Math.min(end+off,nStops), back:S.routeLoop&&end===pts.length-1});
       i=end;
     }
     return out;
   }
-  let dragIdx=null;
+  // Durak yakını restoran önerileri
+  function venueId(v){ return 'v:'+(+v.lat).toFixed(5)+','+(+v.lng).toFixed(5); }
+  function stopVenues(p, max=2){
+    if(p.isVenue || !p.venues) return [];
+    const vs=(p.venues||[]).filter(v=>!v.sponsored && v.lat!=null && v.lng!=null && v.name)
+      .map(v=>({...v, _d: haversine(p,v), _rank: v.popular?0:(v.signature?1:2)}))
+      .filter(v=>v._d<15000 && !S.route.includes(venueId(v)))
+      .sort((a,b)=>a._rank-b._rank || a._d-b._d);
+    return vs.slice(0,max);
+  }
+  function venueSuggestHtml(v, afterIdx, label){
+    const url=`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent((+v.lat).toFixed(6)+','+(+v.lng).toFixed(6))}`;
+    return `<div class="rsug">
+      <div class="rsug-t">${label?`<span class="vbadge pop">${escapeHtml(label)}</span>`:''}${!label&&v.popular?'<span class="vbadge pop">Popüler</span>':''}<strong>${escapeHtml(v.name)}</strong>
+        <span class="dim">${escapeHtml([fmtDist(Math.round(v._d)), venueKindLabel(v)].filter(Boolean).join(' · '))}</span></div>
+      <div class="rsug-b"><a class="mini" href="${escapeHtml(url)}" target="_blank" rel="noopener">Yol tarifi</a><button class="mini add" data-vadd="${escapeHtml(JSON.stringify({i:afterIdx,v:{name:v.name,lat:v.lat,lng:v.lng,kind:v.kind||'',cuisine:v.cuisine||'',popular:!!v.popular,cityName:v._city||'',districtName:v._dist||''}}))}">+ Rotaya ekle</button></div>
+    </div>`;
+  }
+  function moladaki(pts, legs){
+    // rota orta noktasına en yakın, yemek mekanı olan yer (duraklar hariç)
+    const total=legs.reduce((a,l)=>a+l.d,0); if(total<30000) return null;
+    let acc=0, mid=null;
+    for(let i=1;i<pts.length;i++){ const L=legs[i-1].d; if(acc+L>=total/2){ const f=(total/2-acc)/(L||1); mid={lat:pts[i-1].lat+(pts[i].lat-pts[i-1].lat)*f, lng:pts[i-1].lng+(pts[i].lng-pts[i-1].lng)*f, leg:i-1}; break; } acc+=L; }
+    if(!mid) return null;
+    let best=null;
+    for(const p of PLACES_ALL){ if(!p.venues||!p.venues.length||p.lat==null) continue;
+      for(const v of p.venues){ if(v.sponsored||v.lat==null||S.route.includes(venueId(v))) continue;
+        const d=haversine(mid,v); const sc=d-(v.popular?3000:0);
+        if(!best||sc<best.sc) best={sc,v:{...v,_d:d,_city:p.cityName,_dist:p.districtName},p}; } }
+    if(!best || best.v._d>40000) return null;
+    return {...best, mid};
+  }
+  let dragIdx=null, mxPending=null;
   function renderRoute(){
     const box=$('routeBox'); const ps=routePlaces();
     if(ps.length!==S.route.length){ S.route=ps.map(p=>p.id); save(); }
@@ -912,43 +1043,67 @@ body.is-offline .offline-banner{display:block}
       box.innerHTML=`<div class="card empty"><p class="muted">Rotan boş.</p><p class="dim" style="margin-top:6px">Kartlardaki <b>+ Rota</b> düğmesiyle yer ekle ya da bir il sayfasında <b>Bu ilde 1 günlük rota öner</b>’e dokun.</p></div>`;
       return;
     }
-    const {legs,hasStart}=routeLegs();
-    const total=legs.reduce((a,b)=>a+b,0);
-    const road=total*1.3;
+    const {legs,hasStart,src,pts}=routeLegs();
+    const total=legs.reduce((a,l)=>a+l.d,0), totalT=legs.reduce((a,l)=>a+l.t,0);
+    const legLine=l=>`<div class="leg-gap">↓ ${fmtDist(Math.round(l.d))} · ~${fmtDur(l.t)} sürüş${src==='osrm'?'':' (tahmini)'}</div>`;
+    const mola=moladaki(pts,legs);
     const items=ps.map((p,i)=>{
       const leg=legs[hasStart?i:i-1];
-      return `${leg!=null?`<div class="leg-gap">↓ ${fmtDist(Math.round(leg))} kuş uçuşu</div>`:''}
-      <li class="ritem" draggable="true" data-i="${i}">
+      const sugg=stopVenues(p,2).map(v=>({...v,_city:p.cityName,_dist:p.districtName}));
+      const molaHere = mola && mola.mid.leg===(hasStart?i:i-1);
+      return `${molaHere?`<div class="rsug-box mola"><div class="lab">Mola önerisi · rotanın ortası</div>${venueSuggestHtml({...mola.v,_d:haversine(mola.mid,mola.v)}, i-1, 'Mola')}<p class="dim" style="font-size:.75rem">${escapeHtml(mola.p.tr.name)} yakını · rota orta noktasına ${fmtDist(Math.round(haversine(mola.mid,mola.v)))}</p></div>`:''}
+      ${leg!=null?legLine(leg):''}
+      <li class="ritem${p.isVenue?' venue-stop':''}" draggable="true" data-i="${i}">
         <span class="num">${i+1}</span>
-        <div class="rth">${thumbHtml(p)}</div>
-        <div class="rtx" data-open="${p.id}"><strong>${escapeHtml(p.tr.name)}</strong><span class="dim">${escapeHtml(p.cityName)} · ${escapeHtml(p.districtName||'')} · ${escapeHtml(p.tr.tag||'')}</span></div>
+        <div class="rth">${p.isVenue?'<div class="ph-empty" aria-hidden="true">🍽</div>':thumbHtml(p)}</div>
+        <div class="rtx" ${p.isVenue?'':`data-open="${p.id}"`}><strong>${escapeHtml(p.tr.name)}</strong><span class="dim">${p.isVenue?escapeHtml(['Yemek molası',venueKindLabel(p.venue),p.districtName].filter(Boolean).join(' · ')):escapeHtml(p.cityName)+' · '+escapeHtml(p.districtName||'')+' · '+escapeHtml(p.tr.tag||'')}</span></div>
         <div class="ctl"><button data-up="${i}" aria-label="Yukarı" ${i===0?'disabled':''}>▲</button><button data-dn="${i}" aria-label="Aşağı" ${i===ps.length-1?'disabled':''}>▼</button></div>
         <div class="ctl"><button class="rm" data-rm="${i}" aria-label="Çıkar">✕</button></div>
-      </li>`;}).join('');
+      </li>
+      ${sugg.length?`<div class="rsug-box"><div class="lab">Yakında ye</div>${sugg.map(v=>venueSuggestHtml(v,i)).join('')}</div>`:''}`;}).join('');
+    const backLeg = S.routeLoop && ps.length>(hasStart?0:1) ? legs[legs.length-1] : null;
+    const molaBack = mola && backLeg && mola.mid.leg===legs.length-1 ? `<div class="rsug-box mola"><div class="lab">Mola önerisi · dönüş yolunda</div>${venueSuggestHtml({...mola.v,_d:haversine(mola.mid,mola.v)}, ps.length-1, 'Mola')}</div>` : '';
     const legsU=mapsLegUrls();
     box.innerHTML=`
-      <div class="sum-box"><span>${ps.length} durak${hasStart?' · konumundan başlar':''}</span><span><b>~${fmtDist(Math.round(road))}</b><br><small class="dim">yol tahmini (kuş uçuşu ${fmtDist(Math.round(total))})</small></span></div>
-      <div class="btn-row" style="margin-bottom:12px">
+      <div class="sum-box"><span>${ps.length} durak${hasStart?(S.sim?' · demo konumdan başlar':' · konumundan başlar'):''}${S.routeLoop?' · başa döner':''}</span><span><b>~${fmtDist(Math.round(total))} · ${fmtDur(totalT)}</b><br><small class="dim">${src==='osrm'?'yol mesafesi (OSRM)':'tahmini yol (kuş uçuşu ×1,3)'}</small></span></div>
+      <div class="btn-row" style="margin-bottom:8px">
         <button class="btn sec" id="rOpt" style="margin-top:0">Sırayı optimize et</button>
         <button class="btn sec" id="rClear" style="margin-top:0">Temizle</button>
       </div>
-      <ul class="rlist">${items}</ul>
-      ${legsU.map((l,k)=>`<a class="btn" href="${escapeHtml(l.url)}" target="_blank" rel="noopener">Google Haritalar’da rotayı aç${legsU.length>1?` — bölüm ${k+1} (durak ${l.from}–${l.to})`:''}</a>`).join('')}
+      <label class="rloop"><input type="checkbox" id="rLoop" ${S.routeLoop?'checked':''}> Dönüşü başa <span class="dim">(${hasStart?'konumuna':'1. durağa'} geri dön)</span></label>
+      <ul class="rlist">${items}${S.routeLoop&&backLeg?`${molaBack}${legLine(backLeg)}<li class="ritem back"><span class="num">↺</span><div class="rtx"><strong>${hasStart?'Başlangıç konumun':escapeHtml(ps[0].tr.name)}</strong><span class="dim">Dönüş</span></div></li>`:''}</ul>
+      ${legsU.map((l,k)=>`<a class="btn" href="${escapeHtml(l.url)}" target="_blank" rel="noopener">Google Haritalar’da rotayı aç${legsU.length>1?` — bölüm ${k+1} (durak ${l.from}–${l.to}${l.back?' + dönüş':''})`:''}</a>`).join('')}
       ${legsU.length>1?`<p class="dim" style="margin-top:8px">Google Haritalar en fazla 9 ara durak kabul ettiği için rota bölümlere ayrıldı.</p>`:''}
-      <p class="dim" style="margin-top:10px">Sıralamayı ▲▼ ile ya da sürükleyerek değiştir. Mesafeler tahminidir.</p>`;
+      <p class="dim" style="margin-top:10px">Sıralamayı ▲▼ ile ya da sürükleyerek değiştir. ${src==='osrm'?'Yol mesafe/süreleri OSRM (© OpenStreetMap katkıcıları) tahminidir; trafik dahil değil.':'Çevrimdışı: mesafe ve süreler tahminidir.'} Restoran önerileri OpenStreetMap ve kamuya açık kaynaklardan · reklam değil.</p>`;
     const mv=(a,b)=>{ const r=S.route; const [x]=r.splice(a,1); r.splice(b,0,x); save(); renderRoute(); };
     box.querySelectorAll('[data-up]').forEach(b=>b.onclick=()=>mv(+b.dataset.up, +b.dataset.up-1));
     box.querySelectorAll('[data-dn]').forEach(b=>b.onclick=()=>mv(+b.dataset.dn, +b.dataset.dn+1));
-    box.querySelectorAll('[data-rm]').forEach(b=>b.onclick=()=>{ S.route.splice(+b.dataset.rm,1); save(); renderRoute(); });
+    box.querySelectorAll('[data-rm]').forEach(b=>b.onclick=()=>{ const [id]=S.route.splice(+b.dataset.rm,1); if(id&&id.startsWith('v:')) delete S.routeV[id]; save(); renderRoute(); });
     box.querySelectorAll('[data-open]').forEach(b=>b.onclick=()=>openPlaceById(b.dataset.open,'route'));
-    box.querySelectorAll('.ritem').forEach(li=>{
+    box.querySelectorAll('[data-vadd]').forEach(b=>b.onclick=()=>{
+      const {i,v}=JSON.parse(b.dataset.vadd); const id=venueId(v);
+      if(S.route.includes(id)) return;
+      S.routeV[id]=v; S.route.splice(i+1,0,id); save(); renderRoute(); toast(v.name+' rotaya eklendi');
+    });
+    box.querySelectorAll('.ritem[data-i]').forEach(li=>{
       li.addEventListener('dragstart',()=>{ dragIdx=+li.dataset.i; li.classList.add('drag'); });
       li.addEventListener('dragend',()=>li.classList.remove('drag'));
       li.addEventListener('dragover',e=>e.preventDefault());
       li.addEventListener('drop',e=>{ e.preventDefault(); const to=+li.dataset.i; if(dragIdx!=null && dragIdx!==to) mv(dragIdx,to); dragIdx=null; });
     });
-    $('rOpt').onclick=()=>{ optimizeRoute(pos?{lat:pos.lat,lng:pos.lng}:null); renderRoute(); toast('Sıra en yakın komşuya göre düzenlendi'); };
-    $('rClear').onclick=()=>{ if(confirm('Rotadaki tüm yerler silinsin mi?')){ S.route=[]; save(); renderRoute(); } };
+    $('rLoop').onchange=e=>{ S.routeLoop=e.target.checked; save(); renderRoute(); };
+    $('rOpt').onclick=async()=>{
+      const b=$('rOpt'); b.disabled=true; b.textContent='Hesaplanıyor…';
+      const s=await optimizeRoute(routeStart());
+      renderRoute();
+      toast(s==='osrm'?'En kısa yol sırası bulundu (yol mesafesiyle)':'En kısa sıra bulundu (çevrimdışı tahmin)');
+    };
+    $('rClear').onclick=()=>{ if(confirm('Rotadaki tüm yerler silinsin mi?')){ S.route=[]; S.routeV={}; save(); renderRoute(); } };
+    // yol mesafelerini arka planda getir
+    if(src!=='osrm' && navigator.onLine){
+      const mpts=pts.slice(0, S.routeLoop&&pts.length>2?-1:undefined), key=mxKey(mpts);
+      if(mxPending!==key){ mxPending=key; osrmMatrix(mpts).then(m=>{ if(m && document.querySelector('#sc-route.on')) renderRoute(); }); }
+    }
   }
   function suggestDayRoute(city){
     const c={lat:city.lat,lng:city.lng};
@@ -959,8 +1114,9 @@ body.is-offline .offline-banner{display:block}
     if(!pick.length){ toast('Bu ilde öneri yok'); return; }
     if(S.route.length && !confirm('Mevcut rotan bu öneriyle değiştirilsin mi?')) return;
     S.route=pick.map(p=>p.id);
-    optimizeRoute(c);
-    save(); show('route'); toast(city.name+' için 1 günlük rota hazır');
+    // Konumun ildeyse oradan başla; değilse il merkezinden en kısa sırayı kur
+    const st=routeStart(); const from = st && haversine(st,c)<60000 ? st : c;
+    optimizeRoute(from,{offline:true}).then(()=>{ save(); show('route'); toast(city.name+' için 1 günlük rota hazır'); });
   }
 
   /* ---- Yakınımda ---- */
@@ -1139,7 +1295,7 @@ body.is-offline .offline-banner{display:block}
     setPos(S.simLat,S.simLng,null,true);
   } else if(S.simLat==null){
     const ist=PROVINCES.find(c=>c.id==='istanbul') || PROVINCES[0];
-    S.sim=true; S.simLat=ist.lat; S.simLng=ist.lng; save();
+    // ilk açılış: GPS gelene kadar geçici İstanbul; GPS gelince gerçek konum kullanılır
     setPos(ist.lat,ist.lng,null,true);
   }
   startGPS();
