@@ -12,6 +12,7 @@
 <title>Cebimdeki Türkiye</title>
 <link rel="manifest" href="./manifest.json">
 <link rel="apple-touch-icon" href="./icons/icon-192.png">
+<link rel="icon" href="./icons/icon-192.png">
 <script src="./data.js"></script>
 <style>
 :root{
@@ -129,9 +130,42 @@ button:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid var(-
 .head-body{padding:6px 16px 16px}
 .photo-attr{font-size:.7rem;color:var(--dim);line-height:1.4}
 .photo-attr a{color:var(--sea-d);font-weight:700}
+/* v6 features */
+.offline-banner{position:fixed;top:0;left:0;right:0;z-index:50;display:none;background:var(--terra-d);color:#fff;text-align:center;font-weight:800;font-size:.84rem;padding:calc(6px + env(safe-area-inset-top)) 12px 6px}
+body.is-offline .offline-banner{display:block}
+.nav .n{font-size:.74rem;padding:10px 4px}
+.radd{position:absolute;left:10px;top:10px;z-index:2;background:#fff;color:var(--blue);border:1.5px solid var(--blue);font-size:.74rem;font-weight:800;padding:4px 10px;border-radius:999px;box-shadow:0 2px 6px rgba(0,0,0,.15)}
+.radd.in{background:var(--terra-d);border-color:var(--terra-d);color:#fff}
+.btn.radd-big{position:static;box-shadow:none;margin-top:10px;min-height:44px;font-size:.9rem;padding:0 16px}
+.btn.radd-big.in{background:var(--terra-d);color:#fff;border-color:var(--terra-d)}
+.tool-card .lab2{font-family:var(--serif);font-style:italic;font-weight:700;color:var(--blue);font-size:1.12rem;margin-bottom:6px}
+.pbar{height:8px;border-radius:999px;background:var(--sand);overflow:hidden;margin-top:10px}
+.pbar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--sea),var(--blue));transition:width .2s}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap}
+.btn-row .btn{flex:1;min-width:130px}
+.ok-badge{display:inline-block;background:rgba(107,127,58,.14);color:#4E5E27;font-weight:800;font-size:.78rem;padding:3px 10px;border-radius:999px}
+.rlist{list-style:none;margin:0;padding:0}
+.ritem{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:8px;margin-bottom:8px;box-shadow:var(--sh)}
+.ritem.drag{opacity:.5}
+.ritem .num{flex:0 0 28px;height:28px;border-radius:50%;background:var(--blue);color:#fff;font-weight:800;display:flex;align-items:center;justify-content:center;font-size:.85rem}
+.ritem .rth{flex:0 0 52px;height:52px;border-radius:8px;overflow:hidden;background:var(--sea);position:relative}
+.ritem .rth img{width:100%;height:100%;object-fit:cover;display:block}
+.ritem .rth .ph-empty{font-size:1.4rem}
+.ritem .rtx{flex:1;min-width:0;cursor:pointer}
+.ritem .rtx strong{display:block;color:var(--blue);font-family:var(--serif);font-size:1rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ritem .ctl{display:flex;flex-direction:column;gap:2px}
+.ritem .ctl button{width:32px;height:26px;border-radius:6px;border:1px solid var(--line2);color:var(--blue);font-weight:800;line-height:1}
+.ritem .ctl button.rm{color:var(--terra-d)}
+.leg-gap{font-size:.74rem;color:var(--dim);margin:-4px 0 6px 46px}
+.sum-box{display:flex;justify-content:space-between;align-items:center;background:var(--sand);border-radius:12px;padding:12px 14px;margin:6px 0 10px;font-weight:700}
+.sum-box b{font-family:var(--serif);color:var(--blue);font-size:1.3rem}
+.seg-lab{font-size:.72rem;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--olive);margin:4px 2px 6px}
+.nrow{display:flex;align-items:center;gap:10px}
+.vcard .btn{margin-top:10px}
 </style>
 </head>
 <body>
+<div class="offline-banner" role="status">Çevrimdışısın · indirilen iller ve kayıtlı veriler kullanılıyor</div>
 <div class="wrap">
   <!-- KEŞFET -->
   <section id="sc-explore" class="screen on">
@@ -147,6 +181,26 @@ button:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid var(-
     <div id="nearCity" class="muted" style="margin-bottom:10px"></div>
     <div id="exploreList"></div>
     <p class="footer-note" id="attrNote"></p>
+  </section>
+
+  <!-- YAKINIMDA -->
+  <section id="sc-near" class="screen">
+    <div class="top">
+      <div class="brand"><h1>Yakınımda</h1><div class="sub" id="nearSub"></div></div>
+    </div>
+    <div class="seg-lab">Yarıçap</div>
+    <div class="seg" id="nearRad"></div>
+    <div class="seg-lab">Tür</div>
+    <div class="seg" id="nearCat"></div>
+    <div id="nearBox"></div>
+  </section>
+
+  <!-- ROTAM -->
+  <section id="sc-route" class="screen">
+    <div class="top">
+      <div class="brand"><h1>Rotam</h1><div class="sub">Gezi planın · cihazında saklanır</div></div>
+    </div>
+    <div id="routeBox"></div>
   </section>
 
   <!-- İLLER -->
@@ -166,6 +220,7 @@ button:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid var(-
       <div class="brand"><h1 id="cityTitle"></h1><div class="sub" id="citySub"></div></div>
       <button class="btn sm teal" id="teleportCity">İl merkezine ışınlan</button>
     </div>
+    <div class="card tool-card" id="offlineBox"></div>
     <div class="seg" id="districtSeg"></div>
     <div id="cityPlaces"></div>
   </section>
@@ -220,6 +275,10 @@ button:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid var(-
       <p class="dim" style="margin-top:8px">Konum yalnızca cihazında mesafe hesaplamak için kullanılır; sunucuya gönderilmez.</p>
     </div>
     <div class="card">
+      <h3>Çevrimdışı paketler</h3>
+      <div id="offlineList" style="margin-top:8px"></div>
+    </div>
+    <div class="card">
       <h3>Geliştirici</h3>
       <p class="muted" style="margin-top:8px">Asım Akçay · Özel Atayurt Okulları, Eskişehir</p>
       <p class="dim" style="margin-top:6px">Cebimdeki Türkiye — ticari ürün yönü (Play / App Store). Kardeş uygulama: Cebimdeki Eskişehir.</p>
@@ -230,6 +289,8 @@ button:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid var(-
 
 <nav class="nav" aria-label="Ana menü">
   <button class="n on" data-tab="explore">Keşfet</button>
+  <button class="n" data-tab="near">Yakınımda</button>
+  <button class="n" data-tab="route">Rotam</button>
   <button class="n" data-tab="cities">İller</button>
   <button class="n" data-tab="me">Ben</button>
 </nav>
@@ -340,6 +401,7 @@ button:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid var(-
     if(on==='sc-city' && currentCity) renderCity(currentCity);
     if(on==='sc-district' && currentDistrict) renderDistrict(currentDistrict);
     if(on==='sc-place' && currentPlace) renderPlace(currentPlace);
+    if(on==='sc-near' && typeof renderNear==='function') renderNear();
   }
 
   function startGPS(){
@@ -389,13 +451,16 @@ button:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid var(-
   function show(id){
     document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));
     $('sc-'+id).classList.add('on');
-    document.querySelectorAll('.nav .n').forEach(b=>{
-      b.classList.toggle('on', b.dataset.tab===id || (id==='city'&&b.dataset.tab==='cities') || (id==='district'&&b.dataset.tab==='cities') || (id==='place'&&(b.dataset.tab==='explore'||b.dataset.tab==='cities')));
-    });
-    if(id==='explore'||id==='cities'||id==='me'){ S.lastTab=id; save(); }
+    const backTab={district:'cities',city:'cities',cities:'cities',near:'near',route:'route',explore:'explore'};
+    const navId = id==='city'||id==='district' ? 'cities' : id==='place' ? (backTab[placeBack]||'explore') : id;
+    document.querySelectorAll('.nav .n').forEach(b=>b.classList.toggle('on', b.dataset.tab===navId));
+    if(['explore','cities','me','near','route'].includes(id)){ S.lastTab=id; save(); }
+    if(id==='near') renderNear();
+    if(id==='route') renderRoute();
+    window.scrollTo(0,0);
     if(id==='explore') renderExplore();
     if(id==='cities') renderCities();
-    if(id==='me') renderMe();
+    if(id==='me'){ renderMe(); renderOfflineList(); }
   }
 
   document.querySelectorAll('.nav .n').forEach(b=>b.onclick=()=>show(b.dataset.tab));
@@ -445,7 +510,7 @@ button:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid var(-
       const topV=(p.venues||[])[0];
       const thumb=p.photo&&wikiThumbUrl(p.photo.thumbUrl||p.photo.url,500);
       return `<article class="card tap pcard" data-pid="${p.id}" data-cid="${p.cityId}" data-did="${p.districtId}">
-        <div class="pc-img">${thumb?`<img src="${escapeHtml(thumb)}" alt="" loading="lazy" referrerpolicy="no-referrer-when-downgrade">`:`<div class="ph-empty" aria-hidden="true">${escapeHtml((p.tr.name||'?').charAt(0))}</div>`}<span class="pc-dist">${fmtDist(p.d)}${wm!=null?` · ${wm} dk`:''}</span></div>
+        <div class="pc-img">${thumb?`<img src="${escapeHtml(thumb)}" alt="" loading="lazy" referrerpolicy="no-referrer-when-downgrade">`:`<div class="ph-empty" aria-hidden="true">${escapeHtml((p.tr.name||'?').charAt(0))}</div>`}<button class="radd${inRoute(p.id)?' in':''}" data-radd="${p.id}">${raddLabel(p.id)}</button><span class="pc-dist">${fmtDist(p.d)}${wm!=null?` · ${wm} dk`:''}</span></div>
         <div class="pc-body">
           <div>
             <div class="tag">${p.cityName}${p.districtName?' · '+p.districtName:''} · ${p.tr.tag||'Yer'}</div>
@@ -508,6 +573,7 @@ button:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid var(-
     const pc=placeCount(city);
     $('citySub').textContent=`Plaka ${city.plate||'—'} · ${city.region} · ${pc} yer${d!=null?' · merkez '+fmtDist(d):''}`;
     $('teleportCity').onclick=()=>teleportTo(city.lat,city.lng,city.name);
+    renderOfflineBox(city);
 
     const seg=$('districtSeg');
     const dists=city.districts||[];
@@ -541,7 +607,7 @@ button:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid var(-
       const topV=(p.venues||[])[0];
       const thumb=p.photo&&wikiThumbUrl(p.photo.thumbUrl||p.photo.url,500);
       return `<article class="card tap pcard" data-pid="${p.id}" data-did="${p.districtId}">
-        <div class="pc-img">${thumb?`<img src="${escapeHtml(thumb)}" alt="" loading="lazy" referrerpolicy="no-referrer-when-downgrade">`:`<div class="ph-empty" aria-hidden="true">${escapeHtml((p.tr.name||'?').charAt(0))}</div>`}<span class="pc-dist">${fmtDist(p.d)}${wm!=null?` · ${wm} dk`:''}</span></div>
+        <div class="pc-img">${thumb?`<img src="${escapeHtml(thumb)}" alt="" loading="lazy" referrerpolicy="no-referrer-when-downgrade">`:`<div class="ph-empty" aria-hidden="true">${escapeHtml((p.tr.name||'?').charAt(0))}</div>`}<button class="radd${inRoute(p.id)?' in':''}" data-radd="${p.id}">${raddLabel(p.id)}</button><span class="pc-dist">${fmtDist(p.d)}${wm!=null?` · ${wm} dk`:''}</span></div>
         <div class="pc-body">
           <div>
             <div class="tag">${p.districtName||''} · ${p.tr.tag||'Yer'}</div>
@@ -634,6 +700,7 @@ button:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid var(-
           <a class="btn" href="${dirUrl}" target="_blank" rel="noopener">Yol tarifi</a>
           <a class="btn sec" href="${mapUrl}" target="_blank" rel="noopener">Haritada göster</a>
         </div>`:''}
+        <button class="btn sec radd-big${inRoute(p.id)?' in':''}" data-radd="${p.id}">${inRoute(p.id)?'✓ Rotamda — çıkar':'+ Rotama ekle'}</button>
       </div>`;
 
     let layers='';
@@ -679,6 +746,7 @@ button:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid var(-
   $('backFromPlace').onclick=()=>{
     if(placeBack==='district' && currentDistrict){ show('district'); renderDistrict(currentDistrict); }
     else if(placeBack==='city' && currentCity){ show('city'); renderCity(currentCity); }
+    else if(placeBack==='near'||placeBack==='route') show(placeBack);
     else show(placeBack==='cities'?'cities':'explore');
   };
 
@@ -732,6 +800,313 @@ button:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid var(-
     return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   }
 
+  /* ===== v6: offline packs, Rotam, Yakınımda ===== */
+  if(!Array.isArray(S.route)) S.route=[];
+  if(!S.offline || typeof S.offline!=='object') S.offline={};
+  if(!S.nearR) S.nearR=5;
+  if(!S.nearCat) S.nearCat='all';
+  const PLACES_ALL = allPlaces();
+  const PLACE_BY_ID = new Map(PLACES_ALL.map(p=>[p.id,p]));
+  const inRoute = id => S.route.includes(id);
+  const raddLabel = id => inRoute(id)?'✓ Rotada':'+ Rota';
+  function placeThumb(p,w){ return p.photo && wikiThumbUrl(p.photo.thumbUrl||p.photo.url,w); }
+  function thumbHtml(p){
+    const t=placeThumb(p,250);
+    return t?`<img src="${escapeHtml(t)}" alt="" loading="lazy" referrerpolicy="no-referrer-when-downgrade">`:`<div class="ph-empty" aria-hidden="true">${escapeHtml((p.tr.name||'?').charAt(0))}</div>`;
+  }
+  function toggleRoute(id){
+    const i=S.route.indexOf(id);
+    if(i>=0){ S.route.splice(i,1); toast('Rotadan çıkarıldı'); }
+    else { S.route.push(id); toast('Rotama eklendi ('+S.route.length+')'); }
+    save(); updateRaddButtons(); updateRouteBadge();
+  }
+  function updateRaddButtons(){
+    document.querySelectorAll('[data-radd]').forEach(b=>{
+      const id=b.dataset.radd, on=inRoute(id);
+      b.classList.toggle('in',on);
+      b.textContent = b.classList.contains('radd-big') ? (on?'✓ Rotamda — çıkar':'+ Rotama ekle') : raddLabel(id);
+    });
+  }
+  function updateRouteBadge(){
+    const b=document.querySelector('.nav .n[data-tab=route]');
+    if(b) b.textContent = S.route.length ? `Rotam (${S.route.length})` : 'Rotam';
+  }
+  document.addEventListener('click',e=>{
+    const b=e.target.closest('[data-radd]');
+    if(!b) return;
+    e.stopPropagation(); e.preventDefault();
+    toggleRoute(b.dataset.radd);
+    if(document.querySelector('.screen.on')?.id==='sc-route') renderRoute();
+  },true);
+  function openPlaceById(id, back){
+    const p=PLACE_BY_ID.get(id); if(!p) return;
+    const city=PROVINCES.find(c=>c.id===p.cityId);
+    const dist=city && (city.districts||[]).find(d=>d.id===p.districtId);
+    const orig=dist && (dist.places||[]).find(x=>x.id===id);
+    openPlace(orig||p, city, back, dist);
+  }
+
+  /* ---- Rota ---- */
+  function routePlaces(){ return S.route.map(id=>PLACE_BY_ID.get(id)).filter(Boolean); }
+  function optimizeRoute(start){
+    let rest=routePlaces(); if(rest.length<2) return;
+    let cur = start || rest[0];
+    const out=[];
+    if(!start){ out.push(rest.shift()); cur=out[0]; }
+    while(rest.length){
+      let bi=0,bd=Infinity;
+      rest.forEach((p,i)=>{ const d=haversine(cur,p); if(d<bd){bd=d;bi=i;} });
+      cur=rest.splice(bi,1)[0]; out.push(cur);
+    }
+    S.route=out.map(p=>p.id); save();
+  }
+  function routeLegs(){
+    const ps=routePlaces();
+    const pts=(pos?[{lat:pos.lat,lng:pos.lng,_me:true}]:[]).concat(ps);
+    const legs=[];
+    for(let i=1;i<pts.length;i++) legs.push(haversine(pts[i-1],pts[i]));
+    return {legs, hasStart:!!pos};
+  }
+  function mapsLegUrls(){
+    const ps=routePlaces(); if(!ps.length) return [];
+    const ll=p=>`${p.lat},${p.lng}`;
+    const pts=(pos?[{lat:pos.lat,lng:pos.lng}]:[]).concat(ps);
+    if(pts.length===1) return [{url:`https://www.google.com/maps/dir/?api=1&destination=${ll(pts[0])}`,from:1,to:1}];
+    const out=[]; let i=0;
+    while(i<pts.length-1){
+      const end=Math.min(i+10, pts.length-1); // origin + up to 9 waypoints + destination
+      const wp=pts.slice(i+1,end).map(ll).join('|');
+      const url=`https://www.google.com/maps/dir/?api=1&origin=${ll(pts[i])}&destination=${ll(pts[end])}`+(wp?`&waypoints=${encodeURIComponent(wp)}`:'')+'&travelmode=driving';
+      const off=pos?0:1;
+      out.push({url, from:Math.max(1,i+off), to:end+off});
+      i=end;
+    }
+    return out;
+  }
+  let dragIdx=null;
+  function renderRoute(){
+    const box=$('routeBox'); const ps=routePlaces();
+    if(ps.length!==S.route.length){ S.route=ps.map(p=>p.id); save(); }
+    updateRouteBadge();
+    if(!ps.length){
+      box.innerHTML=`<div class="card empty"><p class="muted">Rotan boş.</p><p class="dim" style="margin-top:6px">Kartlardaki <b>+ Rota</b> düğmesiyle yer ekle ya da bir il sayfasında <b>Bu ilde 1 günlük rota öner</b>’e dokun.</p></div>`;
+      return;
+    }
+    const {legs,hasStart}=routeLegs();
+    const total=legs.reduce((a,b)=>a+b,0);
+    const road=total*1.3;
+    const items=ps.map((p,i)=>{
+      const leg=legs[hasStart?i:i-1];
+      return `${leg!=null?`<div class="leg-gap">↓ ${fmtDist(Math.round(leg))} kuş uçuşu</div>`:''}
+      <li class="ritem" draggable="true" data-i="${i}">
+        <span class="num">${i+1}</span>
+        <div class="rth">${thumbHtml(p)}</div>
+        <div class="rtx" data-open="${p.id}"><strong>${escapeHtml(p.tr.name)}</strong><span class="dim">${escapeHtml(p.cityName)} · ${escapeHtml(p.districtName||'')} · ${escapeHtml(p.tr.tag||'')}</span></div>
+        <div class="ctl"><button data-up="${i}" aria-label="Yukarı" ${i===0?'disabled':''}>▲</button><button data-dn="${i}" aria-label="Aşağı" ${i===ps.length-1?'disabled':''}>▼</button></div>
+        <div class="ctl"><button class="rm" data-rm="${i}" aria-label="Çıkar">✕</button></div>
+      </li>`;}).join('');
+    const legsU=mapsLegUrls();
+    box.innerHTML=`
+      <div class="sum-box"><span>${ps.length} durak${hasStart?' · konumundan başlar':''}</span><span><b>~${fmtDist(Math.round(road))}</b><br><small class="dim">yol tahmini (kuş uçuşu ${fmtDist(Math.round(total))})</small></span></div>
+      <div class="btn-row" style="margin-bottom:12px">
+        <button class="btn sec" id="rOpt" style="margin-top:0">Sırayı optimize et</button>
+        <button class="btn sec" id="rClear" style="margin-top:0">Temizle</button>
+      </div>
+      <ul class="rlist">${items}</ul>
+      ${legsU.map((l,k)=>`<a class="btn" href="${escapeHtml(l.url)}" target="_blank" rel="noopener">Google Haritalar’da rotayı aç${legsU.length>1?` — bölüm ${k+1} (durak ${l.from}–${l.to})`:''}</a>`).join('')}
+      ${legsU.length>1?`<p class="dim" style="margin-top:8px">Google Haritalar en fazla 9 ara durak kabul ettiği için rota bölümlere ayrıldı.</p>`:''}
+      <p class="dim" style="margin-top:10px">Sıralamayı ▲▼ ile ya da sürükleyerek değiştir. Mesafeler tahminidir.</p>`;
+    const mv=(a,b)=>{ const r=S.route; const [x]=r.splice(a,1); r.splice(b,0,x); save(); renderRoute(); };
+    box.querySelectorAll('[data-up]').forEach(b=>b.onclick=()=>mv(+b.dataset.up, +b.dataset.up-1));
+    box.querySelectorAll('[data-dn]').forEach(b=>b.onclick=()=>mv(+b.dataset.dn, +b.dataset.dn+1));
+    box.querySelectorAll('[data-rm]').forEach(b=>b.onclick=()=>{ S.route.splice(+b.dataset.rm,1); save(); renderRoute(); });
+    box.querySelectorAll('[data-open]').forEach(b=>b.onclick=()=>openPlaceById(b.dataset.open,'route'));
+    box.querySelectorAll('.ritem').forEach(li=>{
+      li.addEventListener('dragstart',()=>{ dragIdx=+li.dataset.i; li.classList.add('drag'); });
+      li.addEventListener('dragend',()=>li.classList.remove('drag'));
+      li.addEventListener('dragover',e=>e.preventDefault());
+      li.addEventListener('drop',e=>{ e.preventDefault(); const to=+li.dataset.i; if(dragIdx!=null && dragIdx!==to) mv(dragIdx,to); dragIdx=null; });
+    });
+    $('rOpt').onclick=()=>{ optimizeRoute(pos?{lat:pos.lat,lng:pos.lng}:null); renderRoute(); toast('Sıra en yakın komşuya göre düzenlendi'); };
+    $('rClear').onclick=()=>{ if(confirm('Rotadaki tüm yerler silinsin mi?')){ S.route=[]; save(); renderRoute(); } };
+  }
+  function suggestDayRoute(city){
+    const c={lat:city.lat,lng:city.lng};
+    const cand=PLACES_ALL.filter(p=>p.cityId===city.id && p.lat!=null)
+      .map(p=>({p,d:haversine(c,p)})).sort((a,b)=>a.d-b.d).slice(0,12);
+    cand.sort((a,b)=>((b.p.photo?1:0)-(a.p.photo?1:0)) || a.d-b.d);
+    const pick=cand.slice(0,5).map(x=>x.p);
+    if(!pick.length){ toast('Bu ilde öneri yok'); return; }
+    if(S.route.length && !confirm('Mevcut rotan bu öneriyle değiştirilsin mi?')) return;
+    S.route=pick.map(p=>p.id);
+    optimizeRoute(c);
+    save(); show('route'); toast(city.name+' için 1 günlük rota hazır');
+  }
+
+  /* ---- Yakınımda ---- */
+  const CATS=[['all','Tümü'],['muze','Müze'],['doga','Doğa'],['kale','Kale / Tarihi'],['dini','Dini yapı'],['oren','Ören yeri'],['diger','Diğer'],['yemek','Yemek']];
+  function catOf(p){
+    const t=((p.tr.tag||'')+' ').toLocaleLowerCase('tr');
+    if(/müze|kültür merkezi/.test(t)) return 'muze';
+    if(/ören|antik|höyük|harabe|arkeolo|tümülüs/.test(t)) return 'oren';
+    if(/cami|mescit|kilise|türbe|manastır|külliye|tekke|medrese|sinagog|kümbet|dini|inanç|zaviye/.test(t)) return 'dini';
+    if(/kale|sur|kule|han|hamam|köprü|saray|konak|kervansaray|anıt|çeşme|bedesten|sivil mimari|şehitlik|tarihi|kümbet|su kemeri|taşınmaz/.test(t)) return 'kale';
+    if(/doğa|manzara|yayla|mağara|göl|park|kanyon|şelale|kaplıca|plaj|koy|dağ|orman|vadi|milli|tabiat|ada|sahil|kumsal|mesire|baraj|kuş/.test(t)) return 'doga';
+    return 'diger';
+  }
+  function renderNear(){
+    const radSeg=$('nearRad'), catSeg=$('nearCat'), box=$('nearBox');
+    radSeg.innerHTML=[2,5,10,25].map(r=>`<button data-r="${r}" class="${S.nearR===r?'on':''}">${r} km</button>`).join('');
+    catSeg.innerHTML=CATS.map(([k,l])=>`<button data-c="${k}" class="${S.nearCat===k?'on':''}">${l}</button>`).join('');
+    radSeg.querySelectorAll('button').forEach(b=>b.onclick=()=>{ S.nearR=+b.dataset.r; save(); renderNear(); });
+    catSeg.querySelectorAll('button').forEach(b=>b.onclick=()=>{ S.nearCat=b.dataset.c; save(); renderNear(); });
+    $('nearSub').textContent = pos ? (pos.sim?'Demo konum · ':'GPS · ')+nearestCity().name+' çevresi' : 'Konum bekleniyor…';
+    if(!pos){ box.innerHTML='<div class="empty">Konum alınamadı. Ben sekmesinden demo konum seçebilirsin.</div>'; return; }
+    const R=S.nearR*1000;
+    if(S.nearCat==='yemek'){
+      const seen=new Map();
+      for(const p of PLACES_ALL){
+        if(p.lat==null || haversine(pos,p)>R+8000) continue;
+        for(const v of (p.venues||[])){
+          if(v.lat==null||v.lng==null||!v.name) continue;
+          const key=v.name.toLocaleLowerCase('tr')+'|'+(+v.lat).toFixed(4)+','+(+v.lng).toFixed(4);
+          if(seen.has(key)) continue;
+          const d=Math.round(haversine(pos,{lat:+v.lat,lng:+v.lng}));
+          if(d<=R) seen.set(key,{v,d,near:p});
+        }
+      }
+      const list=[...seen.values()].sort((a,b)=>a.d-b.d).slice(0,80);
+      if(!list.length){ box.innerHTML=`<div class="empty">${S.nearR} km içinde kayıtlı restoran yok. Yarıçapı büyüt.</div>`; return; }
+      box.innerHTML=`<div class="chip" style="margin-bottom:10px">${list.length} mekan · ${S.nearR} km</div>`+list.map(({v,d,near})=>{
+        const url=`https://www.google.com/maps/dir/?api=1&destination=${v.lat},${v.lng}`+(pos?`&origin=${pos.lat},${pos.lng}`:'');
+        return `<div class="card vcard"><div class="row"><div style="min-width:0"><div class="tag">${escapeHtml(venueKindLabel(v)||'Restoran')}</div><h3 style="margin-top:4px">${escapeHtml(v.name)}</h3><div class="dim" style="margin-top:4px">${escapeHtml(near.tr.name)} yakınında</div></div><div class="dist">${fmtDist(d)}</div></div>
+          <a class="btn teal" href="${escapeHtml(url)}" target="_blank" rel="noopener">Yol tarifi — ${escapeHtml(v.name)}</a></div>`;
+      }).join('')+'<p class="osm-attr">© OpenStreetMap katkıcıları</p>';
+      return;
+    }
+    let list=PLACES_ALL.filter(p=>p.lat!=null).map(p=>({...p,d:Math.round(haversine(pos,p))})).filter(p=>p.d<=R);
+    if(S.nearCat!=='all') list=list.filter(p=>catOf(p)===S.nearCat);
+    list.sort((a,b)=>a.d-b.d);
+    if(!list.length){ box.innerHTML=`<div class="empty">${S.nearR} km içinde bu türde yer yok. Yarıçapı büyüt.</div>`; return; }
+    box.innerHTML=`<div class="chip" style="margin-bottom:10px">${list.length} yer · ${S.nearR} km</div>`+list.slice(0,150).map(p=>{
+      const wm=walkMin(p.d); const thumb=placeThumb(p,500);
+      return `<article class="card tap pcard" data-open="${p.id}">
+        <div class="pc-img">${thumb?`<img src="${escapeHtml(thumb)}" alt="" loading="lazy" referrerpolicy="no-referrer-when-downgrade">`:`<div class="ph-empty" aria-hidden="true">${escapeHtml((p.tr.name||'?').charAt(0))}</div>`}<button class="radd${inRoute(p.id)?' in':''}" data-radd="${p.id}">${raddLabel(p.id)}</button><span class="pc-dist">${fmtDist(p.d)}${wm!=null?` · ${wm} dk`:''}</span></div>
+        <div class="pc-body"><div class="tag">${escapeHtml(p.cityName)} · ${escapeHtml(p.districtName||'')} · ${escapeHtml(p.tr.tag||'Yer')}</div><h3 style="margin-top:4px">${escapeHtml(p.tr.name)}</h3>
+        <div class="food-pill">${escapeHtml((p.tr.food||'').split('—')[0].trim().slice(0,60))}</div></div></article>`;
+    }).join('');
+    box.querySelectorAll('[data-open]').forEach(el=>el.onclick=()=>openPlaceById(el.dataset.open,'near'));
+  }
+
+  /* ---- Çevrimdışı il paketleri ---- */
+  const hasCache = 'caches' in window;
+  const packName = id => 'ct-photos-'+id;
+  function provincePhotoUrls(city){
+    const s=new Set();
+    for(const d of (city.districts||[])) for(const p of (d.places||[])){
+      if(!p.photo) continue;
+      const u=p.photo.thumbUrl||p.photo.url;
+      [250,500,960].forEach(w=>{ const x=wikiThumbUrl(u,w); if(x) s.add(x); });
+    }
+    return [...s];
+  }
+  function fmtBytes(b){ if(!b) return '0 MB'; return b<1048576 ? Math.round(b/1024)+' KB' : (b/1048576).toFixed(1).replace('.',',')+' MB'; }
+  async function fetchForCache(url){
+    // Wikimedia upload sends CORS headers -> try cors first (real size); fall back to opaque no-cors.
+    try{ const r=await fetch(url,{mode:'cors',credentials:'omit',referrerPolicy:'no-referrer-when-downgrade'}); if(r.ok) return r; }catch(e){}
+    const r=await fetch(url,{mode:'no-cors',credentials:'omit'});
+    if(r.type==='opaque' || r.ok) return r;
+    throw new Error('HTTP '+r.status);
+  }
+  const dlState={}; // id -> {done,total,bytes,cancel}
+  async function downloadProvince(city){
+    if(!hasCache){ toast('Bu tarayıcı çevrimdışı önbelleği desteklemiyor'); return; }
+    if(!navigator.onLine){ toast('İndirmek için internet gerekli'); return; }
+    const urls=provincePhotoUrls(city);
+    const st=dlState[city.id]={done:0,total:urls.length,bytes:0,fail:0,cancel:false};
+    renderOfflineBox(city);
+    const cache=await caches.open(packName(city.id));
+    // make sure app shell + data are cached too
+    try{ const shell=(await caches.keys()).find(k=>k.startsWith('ct-v')); if(shell){ const c=await caches.open(shell); await c.addAll(['./','./index.html','./data.js']).catch(()=>{}); } }catch(e){}
+    let i=0;
+    async function worker(){
+      while(i<urls.length && !st.cancel){
+        const u=urls[i++];
+        try{
+          let r=await cache.match(u);
+          if(!r){ r=await fetchForCache(u); await cache.put(u, r.clone()); }
+          if(r.type!=='opaque'){ const len=+r.headers.get('content-length'); st.bytes += len || (await r.blob()).size; }
+          else st.opaque=(st.opaque||0)+1;
+        }catch(e){ st.fail++; }
+        st.done++; updateProgress(city);
+      }
+    }
+    await Promise.all(Array.from({length:6},worker));
+    if(st.cancel){ await caches.delete(packName(city.id)); delete S.offline[city.id]; delete dlState[city.id]; save(); renderOfflineBox(city); toast('İndirme iptal edildi'); return; }
+    // estimate opaque sizes from average
+    const known=st.done-st.fail-(st.opaque||0);
+    const est = st.opaque ? Math.round(st.bytes + (known? st.bytes/known : 120000)*st.opaque) : st.bytes;
+    S.offline[city.id]={name:city.name, files:st.done-st.fail, total:urls.length, bytes:est, approx:!!st.opaque, at:Date.now()};
+    save(); delete dlState[city.id];
+    renderOfflineBox(city);
+    toast(st.fail ? `${city.name}: ${st.done-st.fail}/${urls.length} fotoğraf indirildi` : `${city.name} çevrimdışı hazır`);
+  }
+  function updateProgress(city){
+    const st=dlState[city.id]; if(!st) return;
+    const bar=$('dlBar'), txt=$('dlTxt');
+    if(bar) bar.style.width=(st.total?Math.round(st.done/st.total*100):100)+'%';
+    if(txt) txt.textContent=`${st.done} / ${st.total} fotoğraf · ${fmtBytes(st.bytes)}${st.fail?` · ${st.fail} hata`:''}`;
+  }
+  async function deleteProvince(id){
+    if(hasCache) await caches.delete(packName(id));
+    delete S.offline[id]; save();
+    toast('Çevrimdışı paket silindi');
+    if(currentCity && currentCity.id===id && document.querySelector('.screen.on')?.id==='sc-city') renderOfflineBox(currentCity);
+    if(document.querySelector('.screen.on')?.id==='sc-me') renderOfflineList();
+  }
+  function renderOfflineBox(city){
+    const box=$('offlineBox'); if(!box) return;
+    const urls=provincePhotoUrls(city);
+    const st=dlState[city.id], info=S.offline[city.id];
+    let body;
+    if(st){
+      body=`<p class="muted">İndiriliyor…</p><div class="pbar"><i id="dlBar"></i></div><p class="dim" id="dlTxt" style="margin-top:6px"></p>
+        <button class="btn sec" id="dlCancel">İptal</button>`;
+    } else if(info){
+      body=`<p><span class="ok-badge">✓ Çevrimdışı hazır</span></p>
+        <p class="dim" style="margin-top:6px">${info.files} fotoğraf · ${info.approx?'~':''}${fmtBytes(info.bytes)} · ${new Date(info.at).toLocaleDateString('tr-TR')}</p>
+        <div class="btn-row"><button class="btn sec" id="dlGo">Güncelle</button><button class="btn sec" id="dlDel" style="color:var(--terra-d);border-color:var(--terra-d)">Sil</button></div>`;
+    } else {
+      body=`<p class="dim">Metinler ve harita bilgisi zaten cihazda. Bu ilin ${urls.length} fotoğrafını (liste + detay boyutu) indirerek internetsiz gez.</p>
+        <button class="btn" id="dlGo" ${urls.length?'':'disabled'}>Çevrimdışı indir</button>`;
+    }
+    box.innerHTML=`<div class="lab2">Çevrimdışı paket</div>${body}
+      <div style="border-top:1px dashed var(--line2);margin-top:14px;padding-top:12px">
+        <div class="lab2">Rota</div><p class="dim">İl merkezine yakın 5 öne çıkan yerle hazır bir gün.</p>
+        <button class="btn sec" id="daySuggest">Bu ilde 1 günlük rota öner</button></div>`;
+    if(st){ updateProgress(city); $('dlCancel').onclick=()=>{ st.cancel=true; }; }
+    if($('dlGo')) $('dlGo').onclick=()=>downloadProvince(city);
+    if($('dlDel')) $('dlDel').onclick=()=>deleteProvince(city.id);
+    $('daySuggest').onclick=()=>suggestDayRoute(city);
+  }
+  async function renderOfflineList(){
+    const box=$('offlineList'); if(!box) return;
+    // reconcile with real caches
+    if(hasCache){ try{ const keys=await caches.keys(); for(const id of Object.keys(S.offline)) if(!keys.includes(packName(id))) delete S.offline[id]; save(); }catch(e){} }
+    const ids=Object.keys(S.offline);
+    let usage='';
+    try{ if(navigator.storage&&navigator.storage.estimate){ const e=await navigator.storage.estimate(); usage=`Toplam kullanılan alan: ${fmtBytes(e.usage)}`; } }catch(e){}
+    box.innerHTML = ids.length ? ids.map(id=>{ const o=S.offline[id]; return `<div class="toggle"><div><strong>${escapeHtml(o.name)}</strong><div class="dim">${o.files} fotoğraf · ${o.approx?'~':''}${fmtBytes(o.bytes)}</div></div><button class="btn sm sec" data-del="${id}" style="margin-top:0;color:var(--terra-d);border-color:var(--terra-d)">Sil</button></div>`; }).join('')
+      : `<p class="dim">Henüz indirilen il yok. İller → bir il → <b>Çevrimdışı indir</b>.</p>`;
+    if(usage) box.innerHTML += `<p class="dim" style="margin-top:8px">${usage}</p>`;
+    box.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>deleteProvince(b.dataset.del));
+  }
+  function setOnline(){ document.body.classList.toggle('is-offline', !navigator.onLine); }
+  window.addEventListener('online',()=>{ setOnline(); toast('Tekrar çevrimiçisin'); });
+  window.addEventListener('offline',setOnline);
+  setOnline();
+  updateRouteBadge();
+
   const note = DATA.attribution || (DATA.sourcePolicy ? (DATA.sourcePolicy.history+' '+DATA.sourcePolicy.venues) : 'OpenStreetMap + kültür kaynakları; canlı Places API değil.');
   $('attrNote').textContent = note;
   $('attrNote2').textContent = note;
@@ -748,7 +1123,7 @@ button:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid var(-
     setPos(ist.lat,ist.lng,null,true);
   }
   startGPS();
-  show(S.lastTab==='cities'||S.lastTab==='me'?S.lastTab:'explore');
+  show(['cities','me','near','route'].includes(S.lastTab)?S.lastTab:'explore');
 })();
 </script>
 </body>
