@@ -1,5 +1,5 @@
 /* Cebimdeki Türkiye — offline service worker */
-const CACHE = 'ct-v7-popular';
+const CACHE = 'ct-v8-photos';
 const PHOTO_PREFIX = 'ct-photos-';   // per-province packs, created by the page
 const RUNTIME = 'ct-runtime';        // fonts etc.
 const ASSETS = ['./', './index.html', './data.js', './manifest.json', './icons/icon-192.png', './icons/icon-512.png'];
