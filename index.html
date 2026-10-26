@@ -85,6 +85,9 @@ button:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid var(-
 .venue .v-meta{font-size:.82rem;color:var(--dim)}
 .venue .v-note{font-size:.78rem;font-weight:700;color:var(--terra-d);margin-top:2px}
 .venue .v-src{font-size:.74rem;color:var(--dim)}
+.vbadge{display:inline-block;font-size:.68rem;font-weight:800;letter-spacing:.02em;padding:1px 7px;border-radius:999px;margin-right:6px;vertical-align:2px}
+.vbadge.pop{background:var(--blue);color:#fff}
+.vbadge.spon{background:#FFF4D6;color:#6B4E00;border:1px solid #E0B84A}
 .venue .btn{margin-top:0;width:100%;min-height:44px;font-size:.88rem}
 .stars{color:var(--terra);font-weight:800}
 .osm-attr{font-size:.74rem;color:var(--dim);margin-top:8px}
@@ -363,11 +366,25 @@ body.is-offline .offline-banner{display:block}
     if(v.cuisine) return (k?k+' · ':'')+String(v.cuisine).replace(/_/g,' ');
     return k;
   }
+  function venueBadges(v){
+    let h='';
+    if(v&&v.sponsored) h+='<span class="vbadge spon" title="Ücretli listeleme (reklam)">Sponsorlu</span>';
+    else if(v&&v.popular) h+='<span class="vbadge pop" title="Kamuya açık rehberlerde öne çıkan, bilinen mekan">Popüler</span>';
+    return h;
+  }
+  // Sıralama kuralı: ilk sıra her zaman organik; en fazla 1 sponsorlu mekan, ilk organik öneriden sonra.
+  function orderVenues(list){
+    const org=(list||[]).filter(v=>!v.sponsored), sp=(list||[]).filter(v=>v.sponsored).slice(0,1);
+    if(!sp.length) return org;
+    if(!org.length) return sp;
+    return [org[0],sp[0],...org.slice(1)];
+  }
   function venueLine(v){
     if(!v) return '';
     const d = v.distanceKm!=null ? fmtVenueDist(v.distanceKm) : '';
     const bits=[d, venueKindLabel(v)].filter(Boolean);
-    return bits.length ? bits.join(' · ')+' · '+v.name : v.name;
+    const tag = v.sponsored?'Sponsorlu · ':(v.popular?'Popüler · ':'');
+    return tag+(bits.length ? bits.join(' · ')+' · '+v.name : v.name);
   }
 
   function allPlaces(){
@@ -509,7 +526,7 @@ body.is-offline .offline-banner{display:block}
     const cards=shown.map(p=>{
       const wm=walkMin(p.d);
       const foodShort=(p.tr.food||'').split('—')[0].trim().slice(0,64);
-      const topV=(p.venues||[])[0];
+      const topV=orderVenues(p.venues)[0];
       const thumb=p.photo&&wikiThumbUrl(p.photo.thumbUrl||p.photo.url,500);
       return `<article class="card tap pcard" data-pid="${p.id}" data-cid="${p.cityId}" data-did="${p.districtId}">
         <div class="pc-img">${thumb?`<img src="${escapeHtml(thumb)}" alt="" loading="lazy" referrerpolicy="no-referrer-when-downgrade">`:`<div class="ph-empty" aria-hidden="true">${escapeHtml((p.tr.name||'?').charAt(0))}</div>`}<button class="radd${inRoute(p.id)?' in':''}" data-radd="${p.id}">${raddLabel(p.id)}</button><span class="pc-dist">${fmtDist(p.d)}${wm!=null?` · ${wm} dk`:''}</span></div>
@@ -606,7 +623,7 @@ body.is-offline .offline-banner{display:block}
     }
     box.innerHTML = items.map(p=>{
       const wm=walkMin(p.d);
-      const topV=(p.venues||[])[0];
+      const topV=orderVenues(p.venues)[0];
       const thumb=p.photo&&wikiThumbUrl(p.photo.thumbUrl||p.photo.url,500);
       return `<article class="card tap pcard" data-pid="${p.id}" data-did="${p.districtId}">
         <div class="pc-img">${thumb?`<img src="${escapeHtml(thumb)}" alt="" loading="lazy" referrerpolicy="no-referrer-when-downgrade">`:`<div class="ph-empty" aria-hidden="true">${escapeHtml((p.tr.name||'?').charAt(0))}</div>`}<button class="radd${inRoute(p.id)?' in':''}" data-radd="${p.id}">${raddLabel(p.id)}</button><span class="pc-dist">${fmtDist(p.d)}${wm!=null?` · ${wm} dk`:''}</span></div>
@@ -643,7 +660,7 @@ body.is-offline .offline-banner{display:block}
     if(!items.length){ box.innerHTML='<div class="empty">Bu ilçede yer yok</div>'; return; }
     box.innerHTML = items.map(p=>{
       const wm=walkMin(p.d);
-      const topV=(p.venues||[])[0];
+      const topV=orderVenues(p.venues)[0];
       const thumb=p.photo&&wikiThumbUrl(p.photo.thumbUrl||p.photo.url,500);
       return `<article class="card tap" data-pid="${p.id}">
         <div class="row with-thumb">
@@ -711,17 +728,17 @@ body.is-offline .offline-banner{display:block}
     if(tr.legend) layers += layer('Efsane / anlatı', tr.legend + ' — Bu bir anlatı veya efsane olabilir; belgelenmiş tarihten ayrı okuyun.', 'legend');
     if(tr.look) layers += layer('Ne tarafa bak', tr.look, '');
     if(tr.food) layers += layer('Yakında ye', tr.food, 'food');
-    const venues=p.venues||[];
+    const venues=orderVenues(p.venues);
     if(venues.length){
       layers += `<div class="card"><div class="layer food" style="border:0;padding:0;margin:0">
         <div class="lab">Yakındaki restoranlar</div>
-        <p class="dim" style="margin-bottom:6px">OpenStreetMap ve kamuya açık kaynaklardaki adlı mekanlar · canlı puan değil · reklam değil</p>
+        <p class="dim" style="margin-bottom:6px">OpenStreetMap ve kamuya açık kaynaklardaki adlı mekanlar · canlı puan değil${venues.some(v=>v.sponsored)?' · “Sponsorlu” etiketli mekan ücretli listelemedir (reklam)':' · reklam değil'}</p>
         ${venues.map(v=>{
           const url = v.mapsUrl || (v.lat!=null && v.lng!=null ? `https://www.google.com/maps/dir/?api=1&destination=${v.lat},${v.lng}` : '');
           const meta = [fmtVenueDist(v.distanceKm), venueKindLabel(v)].filter(Boolean).join(' · ');
           return `<div class="venue">
             <div>
-              <strong>${escapeHtml(v.name)}</strong>
+              ${venueBadges(v)}<strong>${escapeHtml(v.name)}</strong>
               ${meta?`<div class="v-meta">${escapeHtml(meta)}</div>`:''}
               ${v.note?`<div class="v-note">${escapeHtml(v.note)}</div>`:''}
               ${v.sourceUrl?`<div class="v-src"><a href="${escapeHtml(v.sourceUrl)}" target="_blank" rel="noopener">${escapeHtml(v.source||'Kaynak')}</a></div>`:''}
@@ -983,7 +1000,7 @@ body.is-offline .offline-banner{display:block}
       if(!list.length){ box.innerHTML=`<div class="empty">${S.nearR} km içinde kayıtlı restoran yok. Yarıçapı büyüt.</div>`; return; }
       box.innerHTML=`<div class="chip" style="margin-bottom:10px">${list.length} mekan · ${S.nearR} km</div>`+list.map(({v,d,near})=>{
         const url=`https://www.google.com/maps/dir/?api=1&destination=${v.lat},${v.lng}`+(pos?`&origin=${pos.lat},${pos.lng}`:'');
-        return `<div class="card vcard"><div class="row"><div style="min-width:0"><div class="tag">${escapeHtml(venueKindLabel(v)||'Restoran')}</div><h3 style="margin-top:4px">${escapeHtml(v.name)}</h3><div class="dim" style="margin-top:4px">${escapeHtml(near.tr.name)} yakınında</div></div><div class="dist">${fmtDist(d)}</div></div>
+        return `<div class="card vcard"><div class="row"><div style="min-width:0"><div>${venueBadges(v)}<span class="tag">${escapeHtml(venueKindLabel(v)||'Restoran')}</span></div><h3 style="margin-top:4px">${escapeHtml(v.name)}</h3><div class="dim" style="margin-top:4px">${escapeHtml(near.tr.name)} yakınında</div></div><div class="dist">${fmtDist(d)}</div></div>
           <a class="btn teal" href="${escapeHtml(url)}" target="_blank" rel="noopener">Yol tarifi — ${escapeHtml(v.name)}</a></div>`;
       }).join('')+'<p class="osm-attr">© OpenStreetMap katkıcıları</p>';
       return;
