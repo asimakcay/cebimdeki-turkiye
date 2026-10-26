@@ -32,10 +32,10 @@
 [data-reg="Güneydoğu"]{--rc:#B0203C;--rcd:#85142B;--rcl:#F5D9DF}
 [data-reg="Marmara"]{--rc:#6A3FA0;--rcd:#4D2B78;--rcl:#E8DEF4}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-body{margin:0;color:var(--ink);font-family:var(--serif);font-size:1.02rem;line-height:1.5;min-height:100dvh;-webkit-font-smoothing:antialiased;
+body{position:relative;margin:0;color:var(--ink);font-family:var(--serif);font-size:1.02rem;line-height:1.5;min-height:100dvh;-webkit-font-smoothing:antialiased;
   background:var(--glaze);padding:0 env(safe-area-inset-right) calc(92px + env(safe-area-inset-bottom)) env(safe-area-inset-left);transition:background-color .3s}
-body::before{content:"";position:fixed;inset:0 0 auto 0;height:340px;z-index:-1;background:var(--rc);transition:background-color .3s}
-body::after{content:"";position:fixed;inset:0 0 auto 0;height:340px;z-index:-1;background:var(--tile) 0 0/56px 56px;opacity:.22;-webkit-mask:linear-gradient(#000 40%,transparent);mask:linear-gradient(#000 40%,transparent)}
+body::before{content:"";position:absolute;inset:0 0 auto 0;height:340px;z-index:-1;background:var(--rc);transition:background-color .3s}
+body::after{content:"";position:absolute;inset:0 0 auto 0;height:340px;z-index:-1;background:var(--tile) 0 0/56px 56px;opacity:.22;-webkit-mask:linear-gradient(#000 40%,transparent);mask:linear-gradient(#000 40%,transparent)}
 h1,h2,h3{margin:0;font-family:var(--serif);font-weight:500;line-height:1.04;letter-spacing:-.015em}
 h1{font-size:2.7rem} h2{font-size:2.2rem} h3{font-size:1.28rem}
 p{margin:0} button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;padding:0}
