@@ -1108,6 +1108,53 @@ body.is-offline .wrap{padding-top:calc(58px + env(safe-area-inset-top))}
     if(!best || best.v._d>40000) return null;
     return {...best, mid};
   }
+  /* ---- v12: Mola / dinlenme tesisi (uzun bacaklar) ---- */
+  let REST_STATE=0; const GEO_CACHE=new Map(), geoPending=new Set();
+  function loadRest(){ if(window.CT_REST||REST_STATE) return; REST_STATE=1;
+    const sc=document.createElement('script'); sc.src='rest-stops.js'; sc.async=true;
+    sc.onload=()=>{ REST_STATE=2; if(document.querySelector('#sc-route.on')) renderRoute(); }; sc.onerror=()=>{ REST_STATE=0; };
+    document.head.appendChild(sc); }
+  function legGeom(a,b){
+    const key=mxKey([a,b]); if(GEO_CACHE.has(key)) return GEO_CACHE.get(key);
+    if(navigator.onLine && !geoPending.has(key)){ geoPending.add(key);
+      const ctl=new AbortController(); setTimeout(()=>ctl.abort(),6000);
+      fetch(`https://router.project-osrm.org/route/v1/driving/${a.lng.toFixed(6)},${a.lat.toFixed(6)};${b.lng.toFixed(6)},${b.lat.toFixed(6)}?overview=simplified&geometries=geojson`,{signal:ctl.signal})
+        .then(r=>r.json()).then(j=>{ const c=j&&j.routes&&j.routes[0]&&j.routes[0].geometry.coordinates; if(c&&c.length>1){ GEO_CACHE.set(key,c.map(x=>({lat:x[1],lng:x[0]}))); if(document.querySelector('#sc-route.on')) renderRoute(); } }).catch(()=>{});
+    }
+    return [a,b];
+  }
+  function restStopsForLeg(a,b,legD,kmBefore){
+    const R=window.CT_REST; if(!R) return [];
+    const g=legGeom(a,b); const cum=[0];
+    for(let i=1;i<g.length;i++) cum.push(cum[i-1]+haversine(g[i-1],g[i]));
+    const geoLen=cum[cum.length-1]||1, scale=legD/geoLen; // yol uzunluğuna ölçekle
+    const pointAt=m=>{ let i=1; while(i<cum.length-1 && cum[i]<m) i++; const f=(m-cum[i-1])/((cum[i]-cum[i-1])||1); return {lat:g[i-1].lat+(g[i].lat-g[i-1].lat)*f, lng:g[i-1].lng+(g[i].lng-g[i-1].lng)*f}; };
+    const out=[], used=new Set(), step=125000, maxOff=g.length>2?2500:8000;
+    for(let t=step*0.8; t<legD-30000; t+=step){
+      let best=null;
+      for(let w=-25000; w<=25000; w+=5000){ const m=(t+w)/scale; if(m<0||m>geoLen) continue; const q=pointAt(m);
+        const dLat=0.08, dLng=0.1;
+        for(const r of R){ if(Math.abs(r[2]-q.lat)>dLat||Math.abs(r[3]-q.lng)>dLng) continue;
+          const d=haversine(q,{lat:r[2],lng:r[3]}); if(d>maxOff) continue; const id=r[2]+','+r[3]; if(used.has(id)) continue;
+          const sc=d + Math.abs(w)*0.15 - (r[4]==='s'?2500:r[4]==='r'?1200:0) - (r[5]?r[5].length*300:0) - (r[1]?600:0);
+          if(!best||sc<best.sc) best={sc,r,km:Math.round((kmBefore+t+w)/1000),off:d}; } }
+      if(best){ used.add(best.r[2]+','+best.r[3]); out.push(best); }
+      if(out.length>=4) break;
+    }
+    return out;
+  }
+  const REST_KIND={s:'Dinlenme tesisi',r:'Mola yeri',f:'Akaryakıt'};
+  const REST_FAC={w:'WC',y:'yemek',m:'market',a:'yakıt',c:'mescit'};
+  function restBoxHtml(stops, afterIdx){
+    if(!stops.length) return '';
+    return `<div class="rsug-box mola"><div class="lab">Mola / dinlenme tesisi</div>${stops.map(x=>{ const r=x.r;
+      const url=`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent((+r[2]).toFixed(6)+','+(+r[3]).toFixed(6))}`;
+      const fac=(r[5]||'').split('').map(c=>REST_FAC[c]).filter(Boolean).join(', ');
+      return `<div class="rsug"><div class="rsug-t"><span class="vbadge pop">Mola</span><strong>${escapeHtml(r[0])}</strong>
+        <span class="dim">${escapeHtml(['başlangıçtan ~'+x.km+' km', REST_KIND[r[4]]||'', r[1]&&r[1]!==r[0]?r[1]:'', fac].filter(Boolean).join(' · '))}</span></div>
+        <div class="rsug-b"><a class="mini" href="${escapeHtml(url)}" target="_blank" rel="noopener">Yol tarifi</a><button class="mini add" data-vadd="${escapeHtml(JSON.stringify({i:afterIdx,v:{name:r[0],lat:r[2],lng:r[3],kind:'rest',cuisine:'',popular:false,cityName:'',districtName:REST_KIND[r[4]]||''}}))}">+ Rotaya ekle</button></div></div>`; }).join('')}
+      <p class="dim" style="font-size:.75rem">Tesisler OpenStreetMap verisinden · rota üzerinde ~100–150 km aralıkla</p></div>`;
+  }
   let dragIdx=null, mxPending=null;
   function renderRoute(){
     const box=$('routeBox'); const ps=routePlaces();
@@ -1120,17 +1167,20 @@ body.is-offline .wrap{padding-top:calc(58px + env(safe-area-inset-top))}
     const {legs,hasStart,src,pts}=routeLegs();
     const total=legs.reduce((a,l)=>a+l.d,0), totalT=legs.reduce((a,l)=>a+l.t,0);
     const legLine=l=>`<div class="leg-gap">↓ ${fmtDist(Math.round(l.d))} · ~${fmtDur(l.t)} sürüş${src==='osrm'?'':' (tahmini)'}</div>`;
+    const kmAt=[0]; legs.forEach((l,k)=>kmAt.push(kmAt[k]+l.d));
+    if(legs.some(l=>l.d>60000)) loadRest();
+    const restFor=(k,afterIdx)=>{ const l=legs[k]; if(!l||l.d<=60000||!window.CT_REST) return ''; return restBoxHtml(restStopsForLeg(pts[k],pts[k+1],l.d,kmAt[k]),afterIdx); };
     const mola=moladaki(pts,legs);
     const items=ps.map((p,i)=>{
       const leg=legs[hasStart?i:i-1];
       const sugg=stopVenues(p,2).map(v=>({...v,_city:p.cityName,_dist:p.districtName}));
       const molaHere = mola && mola.mid.leg===(hasStart?i:i-1);
       return `${molaHere?`<div class="rsug-box mola"><div class="lab">Mola önerisi · rotanın ortası</div>${venueSuggestHtml({...mola.v,_d:haversine(mola.mid,mola.v)}, i-1, 'Mola')}<p class="dim" style="font-size:.75rem">${escapeHtml(mola.p.tr.name)} yakını · rota orta noktasına ${fmtDist(Math.round(haversine(mola.mid,mola.v)))}</p></div>`:''}
-      ${leg!=null?legLine(leg):''}
+      ${leg!=null?legLine(leg)+restFor(hasStart?i:i-1,i-1):''}
       <li class="ritem${p.isVenue?' venue-stop':''}" data-reg="${escapeHtml(p.region||'')}" draggable="true" data-i="${i}">
         <span class="num">${i+1}</span>
-        <div class="rth">${p.isVenue?'<div class="ph-empty" aria-hidden="true">Y</div>':thumbHtml(p)}</div>
-        <div class="rtx" ${p.isVenue?'':`data-open="${p.id}"`}><strong>${escapeHtml(p.tr.name)}</strong><span class="dim">${p.isVenue?escapeHtml(['Yemek molası',venueKindLabel(p.venue),p.districtName].filter(Boolean).join(' · ')):escapeHtml(p.cityName)+' · '+escapeHtml(p.districtName||'')+' · '+escapeHtml(p.tr.tag||'')}</span></div>
+        <div class="rth">${p.isVenue?`<div class="ph-empty" aria-hidden="true">${p.venue.kind==='rest'?'M':'Y'}</div>`:thumbHtml(p)}</div>
+        <div class="rtx" ${p.isVenue?'':`data-open="${p.id}"`}><strong>${escapeHtml(p.tr.name)}</strong><span class="dim">${p.isVenue?escapeHtml([p.venue.kind==='rest'?'Dinlenme molası':'Yemek molası',p.venue.kind==='rest'?'':venueKindLabel(p.venue),p.districtName].filter(Boolean).join(' · ')):escapeHtml(p.cityName)+' · '+escapeHtml(p.districtName||'')+' · '+escapeHtml(p.tr.tag||'')}</span></div>
         <div class="ctl"><button data-up="${i}" aria-label="Yukarı" ${i===0?'disabled':''}>▲</button><button data-dn="${i}" aria-label="Aşağı" ${i===ps.length-1?'disabled':''}>▼</button></div>
         <div class="ctl"><button class="rm" data-rm="${i}" aria-label="Çıkar">✕</button></div>
       </li>
@@ -1145,10 +1195,10 @@ body.is-offline .wrap{padding-top:calc(58px + env(safe-area-inset-top))}
         <button class="btn sec" id="rClear" style="margin-top:0">Temizle</button>
       </div>
       <label class="rloop"><input type="checkbox" id="rLoop" ${S.routeLoop?'checked':''}> Dönüşü başa <span class="dim">(${hasStart?'konumuna':'1. durağa'} geri dön)</span></label>
-      <ul class="rlist">${items}${S.routeLoop&&backLeg?`${molaBack}${legLine(backLeg)}<li class="ritem back"><span class="num">↺</span><div class="rtx"><strong>${hasStart?'Başlangıç konumun':escapeHtml(ps[0].tr.name)}</strong><span class="dim">Dönüş</span></div></li>`:''}</ul>
+      <ul class="rlist">${items}${S.routeLoop&&backLeg?`${molaBack}${legLine(backLeg)}${restFor(legs.length-1,ps.length-1)}<li class="ritem back"><span class="num">↺</span><div class="rtx"><strong>${hasStart?'Başlangıç konumun':escapeHtml(ps[0].tr.name)}</strong><span class="dim">Dönüş</span></div></li>`:''}</ul>
       ${legsU.map((l,k)=>`<a class="btn" href="${escapeHtml(l.url)}" target="_blank" rel="noopener">Google Haritalar’da rotayı aç${legsU.length>1?` — bölüm ${k+1} (durak ${l.from}–${l.to}${l.back?' + dönüş':''})`:''}</a>`).join('')}
       ${legsU.length>1?`<p class="dim" style="margin-top:8px">Google Haritalar en fazla 9 ara durak kabul ettiği için rota bölümlere ayrıldı.</p>`:''}
-      <p class="dim" style="margin-top:10px">Sıralamayı ▲▼ ile ya da sürükleyerek değiştir. ${src==='osrm'?'Yol mesafe/süreleri OSRM (© OpenStreetMap katkıcıları) tahminidir; trafik dahil değil.':'Çevrimdışı: mesafe ve süreler tahminidir.'} Restoran önerileri OpenStreetMap ve kamuya açık kaynaklardan · reklam değil.</p>`;
+      <p class="dim" style="margin-top:10px">Sıralamayı ▲▼ ile ya da sürükleyerek değiştir. ${src==='osrm'?'Yol mesafe/süreleri OSRM (© OpenStreetMap katkıcıları) tahminidir; trafik dahil değil.':'Çevrimdışı: mesafe ve süreler tahminidir.'} Restoran önerileri OpenStreetMap ve kamuya açık kaynaklardan (popülerlik: kamuya açık puan/yorum sayısı) · reklam değil.</p>`;
     const mv=(a,b)=>{ const r=S.route; const [x]=r.splice(a,1); r.splice(b,0,x); save(); renderRoute(); };
     box.querySelectorAll('[data-up]').forEach(b=>b.onclick=()=>mv(+b.dataset.up, +b.dataset.up-1));
     box.querySelectorAll('[data-dn]').forEach(b=>b.onclick=()=>mv(+b.dataset.dn, +b.dataset.dn+1));

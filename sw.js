@@ -1,8 +1,8 @@
 /* Cebimdeki Türkiye — offline service worker */
-const CACHE = 'ct-v11b';
+const CACHE = 'ct-v12-venues';
 const PHOTO_PREFIX = 'ct-photos-';   // per-province packs, created by the page
 const RUNTIME = 'ct-runtime';        // fonts etc.
-const ASSETS = ['./', './index.html', './data.js', './manifest.json', './icons/icon-192.png', './icons/icon-512.png'];
+const ASSETS = ['./', './index.html', './data.js', './rest-stops.js', './manifest.json', './icons/icon-192.png', './icons/icon-512.png'];
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(ASSETS)).then(() => self.skipWaiting()));
